@@ -1,9 +1,11 @@
 # Human Advice is Overrated
 
+Installation Instructions
 
-    git clone https://github.com/CulleyHarrelson/Botty.git
-    cd Botty
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip3 install -r requirements.txt
-    panel serve --show --autoreload panels/*.py
+```bash
+git clone https://github.com/CulleyHarrelson/Botty.git
+cd Botty/askbotty/
+npm Install
+npm start
+```
+
