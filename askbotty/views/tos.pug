@@ -1,10 +1,17 @@
 extends layout
 
 block content
-  .grid-container.text-center
-    .grid-x.grid-margin-x.align-center 
+  .grid-container
+    .grid-x.grid-margin-x
       h1.cell.small-12= title
-        div.cell.small-12(class="spacer")
-        p.cell.small-12.text-center .... 
-        p.cell.small-12.text-center 
-          a.button(href="/") Back
+    .grid-x.grid-margin-x.align-left
+      .cell.small-12.medium-6
+        p Anonymous use of this service grants askbotty.com the right to add your question to the archive. Save the link!
+    .grid-x.grid-margin-x
+      .cell.small-12.medium-6
+        a(href="/signup") Sign Up
+        p To control your content, hide it, update it, etc.
+    .grid-x.grid-margin-x
+      .cell.small-12.medium-6
+        a.button(href="/") Back
+
