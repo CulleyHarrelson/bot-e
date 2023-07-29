@@ -5,10 +5,6 @@
 ## OS X homebrew packages:
 - node
 
-## AWS Tool Dependencies:
-- https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html
-- https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-
 ## OX X Installation Instructions
 
 ```bash
