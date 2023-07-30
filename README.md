@@ -1,6 +1,7 @@
 # Human Advice is Overrated
 
 ![System Diagram](docs/system_diagram.png "System Diagram")
+![Sequence Diagram](docs/botty_sequence.png "Sequence Diagram")
 
 ## OS X homebrew packages:
 - node
