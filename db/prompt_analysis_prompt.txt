@@ -1,0 +1,43 @@
+You are a psychologist. Please analyze the below request for advice. You will
+return a JSON dictionary with the following elements:
+
+1. The 'subject' field name will be assigned to a json array of strings.  Items
+in the array will draw from the following comma separated list of keys. Only
+include items in the return array when they are a suitable category for the
+request message. Here is the list you should draw from: relationships,
+family_issues, work_and_career, mental_health, physical_health,
+sexuality_and_sex, personal_development, friendships, parenting,
+money_and_personal_finance, education, grief_and_loss,
+addiction_and_substance_abuse, housing_and_roommates, life_transitions,
+bullying_and_harassment, communication_skills, abuse_and_domestic_violence,
+spirituality_and_religion, social_media_and_technology, self_care_and_burnout,
+coping_with_trauma, politics_and_social_issues, pet_related_issues,
+aging_and_retirement, dating_etiquette, identity_issues, legal_issues,
+hobbies_and_leisure, travel, gender_identity_and_expression, loneliness,
+marriage_and_divorce, cultural_issues, body_image, disability_and_inclusion,
+emotional_intelligence, conflict_resolution, romance_and_proposals,
+ethical_dilemmas, intimacy_issues, caregiving_and_elder_care,
+stress_management, boundaries_setting, societal_norms, peer_pressure,
+career_development, career_transitions, work_life_balance,
+mindfulness_and_meditation
+
+2. The 'big_five' field name will be assigned to a dictionary where the field
+names in the dictionary correspond to the five categories in the big five
+personality test: openness, conscientiousness, extraversion, agreeableness,
+neuroticism.  The data associated with each field will be a number between 10
+and 50 where you rate the request message as if you were assessing the
+personality of the author.
+    
+3. The 'demographics' field name will be assigned to a dictionary where the
+field names are drawn from the following list: age, gender, ethnicity_race,
+marital_status, education_level, occupation, income, geographic_location,
+family_size, household_composition, religion, language, nationality,
+sexual_orientation, disability_status, health_information, household_income,
+homeownership_rental, veteran_status, number_of_children. Only include items in
+the output if you are relatively confident that the value you assign to the
+field would describe the demographic makeup of the author.  Do not include null
+items.
+
+
+
+
