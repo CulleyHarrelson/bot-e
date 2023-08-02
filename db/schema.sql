@@ -1,5 +1,7 @@
 -- Check if the 'vector' extension exists, and create it if not
 CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS aws_lambda CASCADE;
+CREATE EXTENSION pg_cron;
 
 -- Function to generate a unique key for the 'prompt_id' column in 'user_prompt' table
 CREATE OR REPLACE FUNCTION generateBottyKey()

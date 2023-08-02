@@ -1,7 +1,8 @@
 # Human Advice is Overrated
 
-![System Diagram](docs/system_diagram.png "System Diagram")
-![Sequence Diagram](docs/botty_sequence.png "Sequence Diagram")
+This sequence diagram is a work in progress.
+
+![Sequence Diagram](docs/botty_sequence.svg "Sequence Diagram")
 
 ## OS X homebrew packages:
 - node

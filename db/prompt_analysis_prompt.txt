@@ -1,7 +1,13 @@
 You are a psychologist. Please analyze the below request for advice. You will
-return a JSON dictionary with the following elements:
+return a JSON dictionary with the following elements.  When requested to
+include an item as "ten_scale" you should respond a scale of 1-10 with 10 being
+a sign that you are highly confident in your answer.
 
-1. The 'subject' field name will be assigned to a json array of strings.  Items
+1. The 'authenticy' field name will be assigned to a ten_scale number
+indicating your confidence that this message is a genuine request for adivce
+and not some other kind of message.
+
+2. The 'subject' field name will be assigned to a json array of strings.  Items
 in the array will draw from the following comma separated list of keys. Only
 include items in the return array when they are a suitable category for the
 request message. Here is the list you should draw from: relationships,
@@ -21,13 +27,6 @@ stress_management, boundaries_setting, societal_norms, peer_pressure,
 career_development, career_transitions, work_life_balance,
 mindfulness_and_meditation
 
-2. The 'big_five' field name will be assigned to a dictionary where the field
-names in the dictionary correspond to the five categories in the big five
-personality test: openness, conscientiousness, extraversion, agreeableness,
-neuroticism.  The data associated with each field will be a number between 10
-and 50 where you rate the request message as if you were assessing the
-personality of the author.
-    
 3. The 'demographics' field name will be assigned to a dictionary where the
 field names are drawn from the following list: age, gender, ethnicity_race,
 marital_status, education_level, occupation, income, geographic_location,
@@ -38,6 +37,19 @@ the output if you are relatively confident that the value you assign to the
 field would describe the demographic makeup of the author.  Do not include null
 items.
 
+4. Using a ten_scale to describe your confidence, assess the question according
+to the following comma separated list of pschological concerns, where 10 means
+you see this condition: Depression, Anxiety, Trauma and PTSD, Psychosis,
+Antisocial Behavior, Narcissism, low self-esteem, Eating Disorders, Substance
+Abuse Issues, Self-Harm or Suicidal Ideation, Stress and Coping, Cognitive
+Abilities
+
+5. The 'ego_development' field name will be assigned to a json strings. Please
+read and analyze the text provided using Suzanne Cook-Greuters ego development
+scale. Assess the authors ego development in terms of these stages: Impulsive -
+Imperial - Achiever - Pluralist - Individualist - Strategist - Magician -
+Ironist 
 
 
-
+key phrases
+contains PII
