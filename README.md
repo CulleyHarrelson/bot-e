@@ -2,7 +2,7 @@
 
 This sequence diagram is a work in progress.
 
-![Sequence Diagram](docs/botty_sequence.svg "Sequence Diagram")
+![Sequence Diagram](docs/botty_flow.svg "Sequence Diagram")
 
 ## OS X homebrew packages:
 - node

@@ -44,13 +44,12 @@ Antisocial Behavior, Narcissism, low self-esteem, Eating Disorders, Substance
 Abuse Issues, Self-Harm or Suicidal Ideation, Stress and Coping, Cognitive
 Abilities
 
-5. The 'ego_development' field name will be assigned to a json strings. Please
-read and analyze the text provided using Suzanne Cook-Greuters ego development
-scale. Assess the authors ego development in terms of these stages: Impulsive -
-Imperial - Achiever - Pluralist - Individualist - Strategist - Magician -
-Ironist 
+5. The 'keywords' field name will be assigned to a list where you extract all
+keywords and phrases from the input text. These keywords and phrases would be
+terms that might be used in a search algorhythm to find the input text as a
+document in the system.
 
+5. The 'pii' field name will be assigned to a list where you extract all
+Personally Identifying Information from the input text.
 
-key phrases
-contains PII
 

@@ -1,6 +1,7 @@
+-- This is the data api
 
 -- Function to generate a unique key for the 'ask_id' column in 'ask' table
-CREATE OR REPLACE FUNCTION generateBottyKey()
+CREATE OR REPLACE FUNCTION generateKey()
 RETURNS TEXT
 LANGUAGE plpgsql
 AS $$
@@ -38,7 +39,7 @@ $$;
 
 
 -- Function to get the next ask from the 'response_queue' table
-CREATE OR REPLACE FUNCTION next_queued_ask()
+CREATE OR REPLACE FUNCTION next_ask()
 RETURNS SETOF ask AS
 $$
 DECLARE
@@ -148,6 +149,25 @@ BEGIN
     INSERT INTO ask (prompt) VALUES (prompt_value) RETURNING * INTO inserted_ask;
 
     RETURN inserted_ask;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get the next ask that does not have an analysis value.
+-- this works as a queue for the conversation api to get the analysis dictionary
+CREATE OR REPLACE FUNCTION next_analysis()
+RETURNS SETOF ask AS
+$$
+DECLARE
+  next_ask_id TEXT;
+BEGIN
+  SELECT ask_id INTO next_ask_id 
+  FROM ask
+  WHERE analysis IS NULL
+  ORDER BY added_at
+  LIMIT 1;
+
+  -- Return the corresponding row from 'ask' where 'ask_id' matches 'next_ask_id'
+  RETURN QUERY SELECT * FROM ask WHERE ask_id = next_ask_id;
 END;
 $$ LANGUAGE plpgsql;
 

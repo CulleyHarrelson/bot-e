@@ -41,13 +41,17 @@ def next_embedding(cursor):
 
 
 def next_moderation(cursor):
-    # this returns an ask record that is in need of embedding
+    # this returns an ask record that is in need of moderation
     cursor.execute("SELECT * FROM next_moderation()")
     return cursor.fetchone()
 
+def next_analsis(cursor):
+    # this returns an ask record that is in need of analysis
+    cursor.execute("SELECT * FROM next_analysis()")
+    return cursor.fetchone()
 
 def new_ask(conn, cursor, prompt):
-    # this returns an ask record that is in need of embedding
+    # insert a new ask record and get back the ask_id
     cursor.execute("SELECT * FROM new_ask(%s)", (prompt,))
     conn.commit()
     return cursor.fetchone()
@@ -56,10 +60,6 @@ def new_ask(conn, cursor, prompt):
 def moderation_api(input_text):
     response = openai.Moderation.create(input=input_text)
     return response
-
-
-# return response["results"][0]
-
 
 def moderate_asks():
     conn, cursor = db_connect()
@@ -101,6 +101,50 @@ def embed_asks():
     conn.close()
     cursor.close()
 
+def content_compliance(ask):
+    return ask
+
+def advise(ask):
+    return ask
+
+
+
+def analysis_api(ask):
+
+    user_message = ask['prompt']
+    with open("prompt_analysis_prompt.txt", "r") as file:
+        system_message = file.read().lower()
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": f"{system_message}",
+            },
+            {
+                "role": "user",
+                "content": "{user_message}",
+            },
+        ],
+    )
+
+def analyze_ask():
+    conn, cursor = db_connect()
+    while True:
+        ask = next_analysis(cursor)
+        if ask is None:
+            break
+
+        moderation = moderation_api(ask["prompt"])
+        cursor.execute(
+            "update ask set moderation = %s where ask_id = %s",
+            (json.dumps(moderation), ask["ask_id"]),
+        )
+        conn.commit()
+        # time.sleep(0.8)
+    conn.close()
+    cursor.close()
 
 def load_random_dicts():
     num_dicts = 50
