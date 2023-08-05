@@ -52,4 +52,7 @@ document in the system.
 5. The 'pii' field name will be assigned to a list where you extract all
 Personally Identifying Information from the input text.
 
+6. The 'anonymized' field name will be a text version of the input text you are
+working with where all PII is removed and replaced with creative alternatives.
+
 

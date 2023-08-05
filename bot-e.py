@@ -1,3 +1,4 @@
+# 3408
 import psycopg2
 
 # DictCursor returns data as dictionaries instead of tuples
@@ -11,16 +12,6 @@ import random
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 pg_password = os.getenv("POSTGRESQL_KEY")
-
-
-def test_db():
-    cursor = db_connect()
-    cursor.execute(
-        "SELECT count(*) FROM get_proximal_ask(ARRAY['test'], ARRAY['test'])"
-    )
-    advice = cursor.fetchall()
-    print(advice)
-    cursor.close()
 
 
 def db_connect():
@@ -45,10 +36,12 @@ def next_moderation(cursor):
     cursor.execute("SELECT * FROM next_moderation()")
     return cursor.fetchone()
 
-def next_analsis(cursor):
+
+def next_analysis(cursor):
     # this returns an ask record that is in need of analysis
     cursor.execute("SELECT * FROM next_analysis()")
     return cursor.fetchone()
+
 
 def new_ask(conn, cursor, prompt):
     # insert a new ask record and get back the ask_id
@@ -60,6 +53,7 @@ def new_ask(conn, cursor, prompt):
 def moderation_api(input_text):
     response = openai.Moderation.create(input=input_text)
     return response
+
 
 def moderate_asks():
     conn, cursor = db_connect()
@@ -101,18 +95,18 @@ def embed_asks():
     conn.close()
     cursor.close()
 
+
 def content_compliance(ask):
     return ask
+
 
 def advise(ask):
     return ask
 
 
-
 def analysis_api(ask):
-
-    user_message = ask['prompt']
-    with open("prompt_analysis_prompt.txt", "r") as file:
+    user_message = ask["prompt"]
+    with open("db/prompt_analysis_prompt.txt", "r") as file:
         system_message = file.read().lower()
 
     completion = openai.ChatCompletion.create(
@@ -129,26 +123,27 @@ def analysis_api(ask):
         ],
     )
 
-def analyze_ask():
+
+def analyze_asks():
     conn, cursor = db_connect()
     while True:
         ask = next_analysis(cursor)
         if ask is None:
             break
 
-        moderation = moderation_api(ask["prompt"])
+        analysis = analysis_api(ask["prompt"])
         cursor.execute(
-            "update ask set moderation = %s where ask_id = %s",
-            (json.dumps(moderation), ask["ask_id"]),
+            "update ask set analysis = %s where ask_id = %s",
+            (json.dumps(analysis), ask["ask_id"]),
         )
         conn.commit()
-        # time.sleep(0.8)
     conn.close()
     cursor.close()
 
+
 def load_random_dicts():
-    num_dicts = 50
-    with open("sample_data.json", "r") as json_file:
+    num_dicts = 100
+    with open("db/sample_data.json", "r") as json_file:
         data = json.load(json_file)
 
     if not isinstance(data, list) or not all(isinstance(item, dict) for item in data):
@@ -173,7 +168,8 @@ def load_random_dicts():
 if __name__ == "__main__":
     # load_random_dicts()
     # embed_asks()
-    #moderate_asks()
+    # moderate_asks()
+    analyze_asks()
 
     # for idx, dictionary in enumerate(random_dicts, start=1):
     #    print(f"Random Dictionary {idx}:")

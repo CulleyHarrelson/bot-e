@@ -3,7 +3,46 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS aws_lambda CASCADE;
 --CREATE EXTENSION pg_cron;
 
+DROP TYPE ask_status CASCADE;
 CREATE TYPE ask_status AS ENUM ('new', 'noncompliant', 'complete', 'deleted');
+
+-- Function to generate a unique key for the 'ask_id' column in 'ask' table
+CREATE OR REPLACE FUNCTION generateKey()
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  length INTEGER := 11;
+  chars TEXT := '-_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  key TEXT := '';
+  randomIndex INTEGER;
+  keyExists BOOLEAN;
+BEGIN
+  LOOP
+    -- Generate the first character of the key, excluding "_" and "-" from the first position
+    randomIndex := (random() * (length(chars) - 3)) + 2;
+    key := substr(chars, randomIndex, 1);
+
+    -- Generate the rest of the characters for the key
+    FOR i IN 1..length - 2 LOOP
+      randomIndex := random() * length(chars);
+      key := key || substr(chars, randomIndex + 1, 1);
+    END LOOP;
+
+    -- Generate the last character of the key, excluding "_" and "-" from the last position
+    randomIndex := (random() * (length(chars) - 3)) + 2;
+    key := key || substr(chars, randomIndex, 1);
+
+    -- Check if the generated key already exists in the 'ask' table
+    SELECT EXISTS (SELECT 1 FROM ask WHERE ask_id = key) INTO keyExists;
+
+    EXIT WHEN NOT keyExists;
+  END LOOP;
+
+  RETURN key;
+END;
+$$;
+
 
 
 -- Drop the 'ask' table and its dependencies if they exist
