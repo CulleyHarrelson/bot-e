@@ -2,7 +2,8 @@
 
 This sequence diagram is a work in progress.
 
-![Sequence Diagram](docs/botty_flow.png "Sequence Diagram")
+![Sequence Diagram](docs/bot-e_flow.png "Sequence Diagram")
+![Sequence Diagram](docs/bot-e_sequence.png "Sequence Diagram")
 
 ## OS X homebrew packages:
 - node

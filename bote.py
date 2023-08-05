@@ -43,6 +43,12 @@ def next_analysis(cursor):
     return cursor.fetchone()
 
 
+def random_ask(cursor):
+    # this returns an ask record that is in need of analysis
+    cursor.execute("SELECT * FROM ask order by RANDOM() limit 1")
+    return cursor.fetchone()
+
+
 def new_ask(conn, cursor, prompt):
     # insert a new ask record and get back the ask_id
     cursor.execute("SELECT * FROM new_ask(%s)", (prompt,))
@@ -53,6 +59,58 @@ def new_ask(conn, cursor, prompt):
 def moderation_api(input_text):
     response = openai.Moderation.create(input=input_text)
     return response
+
+
+def validate_key(key):
+    # Define the set of allowed characters
+    allowed_chars = set(
+        "-_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    )
+
+    # Check if the string is 11 characters long
+    if len(key) != 11:
+        return False
+
+    # Check if the first or last character is _ or -
+    if key[0] in "-_" or key[-1] in "-_":
+        return False
+
+    # Check if all characters are in the allowed set
+    for char in key:
+        if char not in allowed_chars:
+            return False
+
+    # If all tests pass, return True
+    return True
+
+
+def get_asks(ask_ids):
+    conn, cursor = db_connect()
+
+    # Filter out invalid ask_ids
+    valid_ask_ids = [ask_id for ask_id in ask_ids if validate_key(ask_id)]
+
+    cursor.execute(
+        "select * from ask where ask_id = ANY(%s)",
+        (valid_ask_ids,),
+    )
+    asks = cursor.fetchall()
+
+    conn.close()
+    cursor.close()
+    return asks
+
+
+def get_ask(ask_id):
+    # Call get_asks with a list containing a single ask_id
+    asks = get_asks([ask_id])
+
+    # If get_asks returned a non-empty list, return the first element
+    if asks:
+        return asks[0]
+
+    # Otherwise, return None
+    return None
 
 
 def moderate_asks():
@@ -104,8 +162,7 @@ def advise(ask):
     return ask
 
 
-def analysis_api(ask):
-    user_message = ask["prompt"]
+def analysis_api(user_message):
     with open("db/prompt_analysis_prompt.txt", "r") as file:
         system_message = file.read().lower()
 
@@ -122,6 +179,7 @@ def analysis_api(ask):
             },
         ],
     )
+    return completion
 
 
 def analyze_asks():
@@ -131,12 +189,21 @@ def analyze_asks():
         if ask is None:
             break
 
+        start_time = time.time()
         analysis = analysis_api(ask["prompt"])
+        prompt = analysis["choices"][0]["message"]["content"]
+        usage = analysis["usage"]["total_tokens"]
         cursor.execute(
             "update ask set analysis = %s where ask_id = %s",
-            (json.dumps(analysis), ask["ask_id"]),
+            (json.dumps(prompt), ask["ask_id"]),
         )
         conn.commit()
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(
+            f"Ask ID: {ask['ask_id']}, Usage: {usage}, Time taken: {elapsed_time} seconds"
+        )
+
     conn.close()
     cursor.close()
 
@@ -166,12 +233,14 @@ def load_random_dicts():
 
 
 if __name__ == "__main__":
-    # load_random_dicts()
-    # embed_asks()
-    # moderate_asks()
     analyze_asks()
+    # get_ask("MGlpMj2TunU")
 
-    # for idx, dictionary in enumerate(random_dicts, start=1):
-    #    print(f"Random Dictionary {idx}:")
-    #    print(dictionary)
-    #    print()
+# load_random_dicts()
+# embed_asks()
+# moderate_asks()
+
+# conn, cursor = db_connect()
+# ask = random_ask(cursor)
+# content = ask["analysis"]["choices"][0]["message"]["content"]
+# print(json.dumps(content, indent=5))

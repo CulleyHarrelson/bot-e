@@ -1,58 +1,45 @@
 You are a psychologist. Please analyze the below request for advice. You will
 return a JSON dictionary with the following elements.  When requested to
 include an item as "ten_scale" you should respond a scale of 1-10 with 10 being
-a sign that you are highly confident in your answer.
+a sign that you are highly confident in your answer. "Question" is the text
+being evaluated.
 
 1. The 'authenticy' field name will be assigned to a ten_scale number
-indicating your confidence that this message is a genuine request for adivce
-and not some other kind of message.
+indicating your confidence that the entire message is a genuine request for
+adivce and not some other kind of message.
 
 2. The 'subject' field name will be assigned to a json array of strings.  Items
-in the array will draw from the following comma separated list of keys. Only
+in the array will draw from the following comma separated list.   Only
 include items in the return array when they are a suitable category for the
 request message. Here is the list you should draw from: relationships,
-family_issues, work_and_career, mental_health, physical_health,
-sexuality_and_sex, personal_development, friendships, parenting,
-money_and_personal_finance, education, grief_and_loss,
-addiction_and_substance_abuse, housing_and_roommates, life_transitions,
-bullying_and_harassment, communication_skills, abuse_and_domestic_violence,
-spirituality_and_religion, social_media_and_technology, self_care_and_burnout,
-coping_with_trauma, politics_and_social_issues, pet_related_issues,
-aging_and_retirement, dating_etiquette, identity_issues, legal_issues,
-hobbies_and_leisure, travel, gender_identity_and_expression, loneliness,
-marriage_and_divorce, cultural_issues, body_image, disability_and_inclusion,
-emotional_intelligence, conflict_resolution, romance_and_proposals,
-ethical_dilemmas, intimacy_issues, caregiving_and_elder_care,
-stress_management, boundaries_setting, societal_norms, peer_pressure,
-career_development, career_transitions, work_life_balance,
-mindfulness_and_meditation
+family issues, work and career, mental health, physical health,
+sexuality and sex, personal development, friendships, parenting,
+money and personal finance, education, grief and loss,
+addiction and substance abuse, housing and roommates, life transitions,
+bullying and harassment, communication skills, abuse and domestic violence,
+spirituality and religion, social media and technology, self care and burnout,
+coping with trauma, politics and social issues, pet related issues,
+aging and retirement, dating etiquette, identity issues, legal issues,
+hobbies and leisure, travel, gender identity and expression, loneliness,
+marriage and divorce, cultural issues, body image, disability and inclusion,
+emotional intelligence, conflict resolution, romance and proposals,
+ethical dilemmas, intimacy issues, caregiving and elder care,
+stress management, boundaries setting, societal norms, peer pressure,
+career development, career transitions, work life balance,
+mindfulness and meditation
 
 3. The 'demographics' field name will be assigned to a dictionary where the
-field names are drawn from the following list: age, gender, ethnicity_race,
-marital_status, education_level, occupation, income, geographic_location,
-family_size, household_composition, religion, language, nationality,
-sexual_orientation, disability_status, health_information, household_income,
-homeownership_rental, veteran_status, number_of_children. Only include items in
-the output if you are relatively confident that the value you assign to the
-field would describe the demographic makeup of the author.  Do not include null
-items.
+field names might include any items from this list: age, gender,
+sexual_orientation.  Can you tell the authors general age?, Can you tell their
+gender, do they identify as transgender or non-binary? Do they mention being
+gay or queery or non-binary? Do they seem heterosexual or put "nonsexual" if 
+their messages doesn't indicate anything.
 
-4. Using a ten_scale to describe your confidence, assess the question according
-to the following comma separated list of pschological concerns, where 10 means
-you see this condition: Depression, Anxiety, Trauma and PTSD, Psychosis,
-Antisocial Behavior, Narcissism, low self-esteem, Eating Disorders, Substance
-Abuse Issues, Self-Harm or Suicidal Ideation, Stress and Coping, Cognitive
-Abilities
-
-5. The 'keywords' field name will be assigned to a list where you extract all
-keywords and phrases from the input text. These keywords and phrases would be
-terms that might be used in a search algorhythm to find the input text as a
-document in the system.
-
-5. The 'pii' field name will be assigned to a list where you extract all
-Personally Identifying Information from the input text.
-
-6. The 'anonymized' field name will be a text version of the input text you are
-working with where all PII is removed and replaced with creative alternatives.
-
-
+4. The 'advice_type' field name will categorize the type of question being
+asked in the input text. be a text field drawing from the following list:
+discreet, counsel, mentoring, praise. Put "discreet" in this field when the
+author of the text is exploring options and seeking recommendations on a
+decision. Put "counsel" in this field when the author is looking for guidance
+on a complex or unfamiliar situation. Put "mentoring" in this field if the author
+is looking for guidance or opportunities for change and growth. Put "praise" in
+this field if the question does not fit into the other categories.

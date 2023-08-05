@@ -7,4 +7,16 @@ get /filter/<include_list>/exclude/<exclude_list>
 get /search/<search_phrase>
 get /hashtags/<hashtags>
 
+Sequence:
+
+Flutter App -> Flask API
+Flask API -> Postgresql
+Postgresql -> SNS Topic
+SNS Topic -> Botty Lambda
+Botty Lambda -> OpenAI
+OpenAI -> Botty Lambda
+Botty Lambda -> Postgesql
+Botty Lambda -> SNS Topic
+SNS Topic -> Flutter App
+
 
