@@ -1,8 +1,10 @@
 # Human Advice is Overrated
 
-This sequence diagram is a work in progress.
+Advice Request Message Flow:
 
 ![Sequence Diagram](docs/bot-e_flow.png "Sequence Diagram")
+
+Infrastructure Sequence:
 ![Sequence Diagram](docs/bot-e_sequence.png "Sequence Diagram")
 
 ## OS X homebrew packages:

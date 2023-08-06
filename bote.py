@@ -167,7 +167,8 @@ def analysis_api(user_message):
         system_message = file.read().lower()
 
     completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        # model="gpt-3.5-turbo",
+        model="gpt-4",
         messages=[
             {
                 "role": "system",
