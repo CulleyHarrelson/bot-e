@@ -163,22 +163,23 @@ def advise(ask):
 
 
 def analysis_api(user_message):
-    with open("db/prompt_analysis_prompt.txt", "r") as file:
-        system_message = file.read().lower()
-
+    with open("db/analysis_functions.json", "r") as file:
+        functions = json.load(file)
     completion = openai.ChatCompletion.create(
-        # model="gpt-3.5-turbo",
-        model="gpt-4",
+        model="gpt-3.5-turbo",
+        # model="gpt-4",
         messages=[
             {
                 "role": "system",
-                "content": f"{system_message}",
+                "content": "Assess the author of the following message.  It should be a message asking for advice.",
             },
             {
                 "role": "user",
-                "content": "{user_message}",
+                "content": f"{user_message}",
             },
         ],
+        functions=functions,
+        function_call={"name": "extract_data"},
     )
     return completion
 
@@ -192,11 +193,21 @@ def analyze_asks():
 
         start_time = time.time()
         analysis = analysis_api(ask["prompt"])
-        prompt = analysis["choices"][0]["message"]["content"]
+        response_message = analysis["choices"][0]["message"]
+        # analysis = data['analysis']
+        # choices = analysis['choices']
+        # if choices[0]['finish_reason'] == 'function_call':
+        #    print(choices[0]['message']['function_call']['arguments'])
+
+        if response_message.get("function_call"):
+            response = response_message["function_call"]["arguments"]
+        else:
+            response = '{"advice_type": "API_FAILURE"}'
+
         usage = analysis["usage"]["total_tokens"]
         cursor.execute(
             "update ask set analysis = %s where ask_id = %s",
-            (json.dumps(prompt), ask["ask_id"]),
+            (json.dumps(response), ask["ask_id"]),
         )
         conn.commit()
         end_time = time.time()

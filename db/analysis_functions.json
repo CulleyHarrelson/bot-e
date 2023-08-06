@@ -1,0 +1,119 @@
+[
+    {
+        "description": "function to extra data from the user message",
+        "name": "extract_data",
+        "parameters": {
+            "properties": {
+                "advice_type": {
+                    "description": "categorize the type of question being asked Put DISCREET in this field when the author of the text is exploring options and seeking recommendations on a decision. Put COUNSEL in this field when the author is looking for guidance on a complex or unfamiliar situation. Put MENTORING in this field if the author is looking for guidance or opportunities for change and growth. Put PRAISE in this field if the question does not fit into the other categories.",
+                    "enum": [
+                        "DISCREET",
+                        "COUNSEL",
+                        "MENTORING",
+                        "PRAISE"
+                    ],
+                    "type": "string"
+                },
+                "authenticy": {
+                    "description": "select QUESTION when the message appears to be a reqeust for advice.  return FRAUD when the author of the message might be trying to abuse the system.  For all other cases use OTHER",
+                    "enum": [
+                        "QUESTION",
+                        "FRAUD",
+                        "OTHER"
+                    ],
+                    "type": "string"
+                },
+                "gender": {
+                    "description": "Gender of author.  If it is not clear, use UNKNOWN",
+                    "enum": [
+                        "MALE",
+                        "FEMALE",
+                        "NON_BINARY",
+                        "TRANSGENDER",
+                        "UNKNOWN"
+                    ],
+                    "type": "string"
+                },
+                "geneartion": {
+                    "description": "The approximate age range of author: GEN_Z (0-24), MILLENNIALS (25-40), GEN_X (41-56), BOOMERS (57-75), SILENT (76+)",
+                    "enum": [
+                        "GEN_Z",
+                        "MILLENNIAL",
+                        "GEN_X",
+                        "BOOMER",
+                        "SILENT"
+                    ],
+                    "type": "string"
+                },
+                "sexual_orientation": {
+                    "description": "sexual orientation of author. If it is not clear, use UNKNOWN",
+                    "enum": [
+                        "HETEROSEXUAL",
+                        "HOMOSEXUAL",
+                        "BISEXUAL",
+                        "ASEXUAL",
+                        "PANSEXUAL",
+                        "DEMISEXUAL",
+                        "QUEER",
+                        "QUESTIONING",
+                        "UNKNOWN"
+                    ],
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "Topics covered in the advice message, can be more than one.",
+                    "items": {
+                        "enum": [
+                            "relationships",
+                            "family issues",
+                            "work and career",
+                            "mental health",
+                            "physical health",
+                            "sexuality and sex",
+                            "personal development",
+                            "friendships",
+                            "parenting",
+                            "money and personal finance",
+                            "education",
+                            "grief and loss",
+                            "addiction and substance abuse",
+                            "housing and roommates",
+                            "life transitions",
+                            "bullying and harassment",
+                            "communication skills",
+                            "abuse and domestic violence",
+                            "spirituality and religion",
+                            "social media and technology",
+                            "self care and burnout",
+                            "coping with trauma",
+                            "politics and social issues",
+                            "pet related issues",
+                            "aging and retirement",
+                            "identity issues",
+                            "legal issues",
+                            "travel",
+                            "gender identity and expression",
+                            "loneliness",
+                            "marriage and divorce",
+                            "cultural issues",
+                            "body image",
+                            "disability and inclusion",
+                            "romance",
+                            "ethical dilemmas",
+                            "intimacy issues",
+                            "caregiving and elder care",
+                            "stress management",
+                            "societal norms",
+                            "peer pressure",
+                            "career development",
+                            "career transitions"
+                        ],
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        }
+    }
+]
