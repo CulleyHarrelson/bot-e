@@ -136,3 +136,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- return 10 similar questions
+CREATE OR REPLACE FUNCTION find_similar(ask_id_in TEXT)
+RETURNS SETOF ask
+AS $$
+DECLARE
+    target_embedding vector(1536);
+BEGIN
+    -- Get the target embedding for the given ask_id
+    SELECT embedding INTO target_embedding
+    FROM ask
+    WHERE ask_id = ask_id_in;
+
+    IF target_embedding IS NULL THEN
+        RAISE EXCEPTION 'No record found for the given ask_id';
+    END IF;
+
+    -- Perform the proximity search using pg_similarity extension
+    RETURN QUERY
+    SELECT a.*
+    FROM ask a
+    WHERE a.ask_id <> ask_id_in  -- Exclude the same ask_id
+    ORDER BY a.embedding <-> target_embedding  -- Order by proximity to the target embedding
+    LIMIT 10;  -- Limit the results to 10 records
+END;
+$$ LANGUAGE plpgsql;
+

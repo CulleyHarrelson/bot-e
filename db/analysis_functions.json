@@ -3,6 +3,7 @@
         "description": "function to extra data from the user message",
         "name": "extract_data",
         "parameters": {
+            "required": ["advice_type", "authenticy", "creative_title", "gender", "generation", "hash_tags", "sexual_orientation", "subject"],
             "properties": {
                 "advice_type": {
                     "default": "PRAISE",
@@ -40,7 +41,7 @@
                     ],
                     "type": "string"
                 },
-                "geneartion": {
+                "generation": {
                     "default": "UNKNOWN",
                     "description": "The approximate age range of author: GEN_Z (0-24), MILLENNIALS (25-40), GEN_X (41-56), BOOMERS (57-75), SILENT (76+)",
                     "enum": [
@@ -54,8 +55,11 @@
                     "type": "string"
                 },
                 "hash_tags": {
-                    "description": "Create ten hashtags starting with # symbol that are most represantative of the text examined",
-                    "type": "array"
+                    "description": "Create ten hashtags similar to twitter hashtags that creatively categorize the text",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "sexual_orientation": {
                     "default": "UNKNOWN",

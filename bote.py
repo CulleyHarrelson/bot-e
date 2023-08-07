@@ -139,6 +139,24 @@ def embedding_api(input_text):
     return response["data"][0]["embedding"]
 
 
+def embed_ask(conn, cursor, ask):
+    embedding = embedding_api(ask["prompt"])
+    cursor.execute(
+        "update ask set embedding = %s where ask_id = %s",
+        (embedding, ask["ask_id"]),
+    )
+    conn.commit()
+
+
+def moderate_ask(conn, cursor, ask):
+    moderation = moderation_api(ask["prompt"])
+    cursor.execute(
+        "update ask set moderation = %s where ask_id = %s",
+        (json.dumps(moderation), ask["ask_id"]),
+    )
+    conn.commit()
+
+
 def embed_asks():
     conn, cursor = db_connect()
     while True:
@@ -163,6 +181,57 @@ def content_compliance(ask):
 
 def advise(ask):
     return ask
+
+
+def respond_to_ask(conn, cursor, ask):
+    user_message = ask["prompt"]
+    start_time = time.time()
+    with open("db/prompt_bot-e_main.txt", "r") as file:
+        system_message = file.read()
+
+    analysis_json = analysis_api(user_message)
+    analysis_usage = analysis_json["usage"]["total_tokens"]
+    response_message = analysis_json["choices"][0]["message"]
+
+    if response_message.get("function_call"):
+        analysis = response_message["function_call"]["arguments"]
+    else:
+        analysis = '{"advice_type": "API_FAILURE"}'
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        # model="gpt-4",
+        messages=[
+            {
+                "role": "system",
+                "content": f"{system_message}",
+            },
+            {
+                "role": "user",
+                "content": f"{user_message}",
+            },
+        ],
+    )
+
+    response_message = completion["choices"][0]["message"]["content"]
+    response_usage = completion["usage"]["total_tokens"]
+    cursor.execute(
+        "update ask set response = %s, system_prompt = %s, analysis = %s where ask_id = %s",
+        (
+            json.dumps(response_message),
+            system_message,
+            json.dumps(analysis),
+            ask["ask_id"],
+        ),
+    )
+    conn.commit()
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(
+        f"Ask ID: {ask['ask_id']}, Analysis Usage: {analysis_usage}, Response Usage: {response_usage}, Time taken: {elapsed_time} seconds"
+    )
+    return True
+    # return completion
 
 
 def analysis_api(user_message):
@@ -230,21 +299,27 @@ def load_random_dicts():
     random_dicts = random.sample(data, num_dicts)
 
     conn, cursor = db_connect()
-    try:
-        for idx, dictionary in enumerate(random_dicts, start=1):
-            question = dictionary.get("question", "")
+    # try:
+    for idx, dictionary in enumerate(random_dicts, start=1):
+        question = dictionary.get("question", "")
+        if question:
             ask = new_ask(conn, cursor, question)
+            embed_ask(conn, cursor, ask)
+            moderate_ask(conn, cursor, ask)
+            respond_to_ask(conn, cursor, ask)
+
             ask_id = ask["ask_id"]
             print(ask_id)
-    except Exception as e:
-        print("An error occurred:", e)
-    finally:
-        conn.close()
-        cursor.close()
+    # except Exception as e:
+    #    print("An error occurred:", e)
+    # finally:
+    #    conn.close()
+    #    cursor.close()
 
 
 if __name__ == "__main__":
-    analyze_asks()
+    load_random_dicts()
+    # analyze_asks()
     # get_ask("MGlpMj2TunU")
 
     # load_random_dicts()
