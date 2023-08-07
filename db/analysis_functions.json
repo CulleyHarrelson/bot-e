@@ -5,6 +5,7 @@
         "parameters": {
             "properties": {
                 "advice_type": {
+                    "default": "PRAISE",
                     "description": "categorize the type of question being asked Put DISCREET in this field when the author of the text is exploring options and seeking recommendations on a decision. Put COUNSEL in this field when the author is looking for guidance on a complex or unfamiliar situation. Put MENTORING in this field if the author is looking for guidance or opportunities for change and growth. Put PRAISE in this field if the question does not fit into the other categories.",
                     "enum": [
                         "DISCREET",
@@ -15,16 +16,21 @@
                     "type": "string"
                 },
                 "authenticy": {
-                    "description": "select QUESTION when the message appears to be a reqeust for advice.  return FRAUD when the author of the message might be trying to abuse the system.  For all other cases use OTHER",
+                    "default": "OTHER",
+                    "description": "select QUESTION when the message appears to be an authentic request for advice.  For all other cases use OTHER",
                     "enum": [
                         "QUESTION",
-                        "FRAUD",
                         "OTHER"
                     ],
                     "type": "string"
                 },
+                "creative_title": {
+                    "description": "Devise a clever title for the message that speaks to the core topic",
+                    "type": "string"
+                },
                 "gender": {
-                    "description": "Gender of author.  If it is not clear, use UNKNOWN",
+                    "default": "UNKNOWN",
+                    "description": "Gender of author",
                     "enum": [
                         "MALE",
                         "FEMALE",
@@ -35,17 +41,24 @@
                     "type": "string"
                 },
                 "geneartion": {
+                    "default": "UNKNOWN",
                     "description": "The approximate age range of author: GEN_Z (0-24), MILLENNIALS (25-40), GEN_X (41-56), BOOMERS (57-75), SILENT (76+)",
                     "enum": [
                         "GEN_Z",
                         "MILLENNIAL",
                         "GEN_X",
                         "BOOMER",
-                        "SILENT"
+                        "SILENT",
+                        "UNKNOWN"
                     ],
                     "type": "string"
                 },
+                "hash_tags": {
+                    "description": "Create ten hashtags starting with # symbol that are most represantative of the text examined",
+                    "type": "array"
+                },
                 "sexual_orientation": {
+                    "default": "UNKNOWN",
                     "description": "sexual orientation of author. If it is not clear, use UNKNOWN",
                     "enum": [
                         "HETEROSEXUAL",

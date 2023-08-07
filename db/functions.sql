@@ -107,6 +107,9 @@ RETURNS ask AS $$
 DECLARE
     inserted_ask ask;
 BEGIN
+     IF LENGTH(TRIM(prompt_value)) = 0 THEN
+        RAISE EXCEPTION 'ask.prompt cannot be a zero-length string';
+    END IF;
     -- Insert the record into the 'ask' table
     INSERT INTO ask (prompt) VALUES (prompt_value) RETURNING * INTO inserted_ask;
 

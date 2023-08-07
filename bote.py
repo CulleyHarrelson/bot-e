@@ -50,6 +50,9 @@ def random_ask(cursor):
 
 
 def new_ask(conn, cursor, prompt):
+    prompt = prompt.strip()
+    if len(prompt) < 1:
+        return {}
     # insert a new ask record and get back the ask_id
     cursor.execute("SELECT * FROM new_ask(%s)", (prompt,))
     conn.commit()
@@ -194,10 +197,6 @@ def analyze_asks():
         start_time = time.time()
         analysis = analysis_api(ask["prompt"])
         response_message = analysis["choices"][0]["message"]
-        # analysis = data['analysis']
-        # choices = analysis['choices']
-        # if choices[0]['finish_reason'] == 'function_call':
-        #    print(choices[0]['message']['function_call']['arguments'])
 
         if response_message.get("function_call"):
             response = response_message["function_call"]["arguments"]
@@ -248,8 +247,8 @@ if __name__ == "__main__":
     analyze_asks()
     # get_ask("MGlpMj2TunU")
 
-# load_random_dicts()
-# embed_asks()
+    # load_random_dicts()
+    # embed_asks()
 # moderate_asks()
 
 # conn, cursor = db_connect()
