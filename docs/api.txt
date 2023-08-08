@@ -1,10 +1,10 @@
-POST /new_question
-GET /questions/<include_list>
+POST/new
+GET /list/<include_list>
 get /similar/<ask_id>
 get /filter/<include_list>
 get /filter/<include_list>/exclude/<exclude_list>
 get /search/<search_phrase>
-get /hashtags/<hashtags>
+get /tags/<hashtags>
 
 Sequence:
 

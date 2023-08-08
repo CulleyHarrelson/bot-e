@@ -1,64 +1,56 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
+import bote
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 
-# In-memory data store for demonstration purposes
-messages = {}
-votes = {}
-similar_messages = {}
+
+def custom_json_serializer(obj):
+    if isinstance(obj, datetime):
+        return obj.strftime("%Y-%m-%d %H:%M:%S")
+    raise TypeError("Type not serializable")
 
 
-@app.route("/index", methods=["GET", "POST"])
-def index():
-    if request.method == "GET":
-        return jsonify({"index": "Welcome to the API!"})
-    elif request.method == "POST":
-        # Handle POST request (e.g., create a new resource)
-        return jsonify({"message": "Resource created"}), 201
+@app.route("/list/<array_of_ids>", methods=["GET"])
+def get_rows_by_ids(array_of_ids):
+    try:
+        # Split the provided array_of_ids into a list of individual ids
+        ids_list = array_of_ids.split(",")
 
+        # Get the rows from the database
+        rows = bote.get_asks(ids_list)
 
-@app.route("/msg/<string:ask_id>", methods=["GET"])
-def get_message(ask_id):
-    message = messages.get(ask_id, None)
-    if message is None:
-        return jsonify({"error": "Message not found"}), 404
-    return jsonify({"message": message})
+        # Create a list to hold the JSON objects for each row
+        json_rows = []
 
+        for row in rows:
+            # Convert the row to a dictionary
+            row_dict = {
+                "ask_id": row[0],
+                "prompt": row[1],
+                "title": row[2],
+                "added_at": row[3].strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),  # Convert datetime to string
+                "ask_status": row[4],
+                "hashtags": row[5],
+                "embedding": row[6],
+                "moderation": row[7],
+                "analysis": row[8],
+                "system_prompt": row[9],
+                "response": row[10],
+            }
+            json_rows.append(row_dict)
 
-@app.route("/tos", methods=["GET"])
-def terms_of_service():
-    return jsonify({"terms_of_service": "Terms of service content here"})
+        # Convert the list of dictionaries to JSON
+        json_response = json.dumps(json_rows, default=custom_json_serializer)
 
+        # Return the JSON response
+        return json_response
 
-@app.route("/about", methods=["GET"])
-def about():
-    return jsonify({"about": "About page content here"})
-
-
-@app.route("/upvote/<string:ask_id>", methods=["PUT"])
-def upvote(ask_id):
-    votes[ask_id] = votes.get(ask_id, 0) + 1
-    return jsonify({"votes": votes[ask_id]})
-
-
-@app.route("/downvote/<string:ask_id>", methods=["PUT"])
-def downvote(ask_id):
-    votes[ask_id] = votes.get(ask_id, 0) - 1
-    return jsonify({"votes": votes[ask_id]})
-
-
-@app.route("/similar/<string:ask_id>", methods=["GET"])
-def similar(ask_id):
-    similar = similar_messages.get(ask_id, [])
-    return jsonify({"similar": similar})
-
-
-@app.route("/similar/<string:ask_id>/exclude/<string:exclude_list>", methods=["GET"])
-def similar_exclude(ask_id, exclude_list):
-    similar = similar_messages.get(ask_id, [])
-    exclude = exclude_list.split(",")
-    filtered_similar = [item for item in similar if item not in exclude]
-    return jsonify({"similar": filtered_similar})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
