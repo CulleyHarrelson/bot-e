@@ -1,8 +1,6 @@
 POST/new
 GET /list/<include_list>
 get /similar/<ask_id>
-get /filter/<include_list>
-get /filter/<include_list>/exclude/<exclude_list>
 get /search/<search_phrase>
 get /tags/<hashtags>
 
@@ -11,11 +9,11 @@ Sequence:
 Flutter App -> Flask API
 Flask API -> Postgresql
 Postgresql -> SNS Topic
-SNS Topic -> Botty Lambda
-Botty Lambda -> OpenAI
-OpenAI -> Botty Lambda
-Botty Lambda -> Postgesql
-Botty Lambda -> SNS Topic
+SNS Topic -> bot-e Lambda
+bot-e Lambda -> OpenAI
+OpenAI -> bot-e Lambda
+bot-e Lambda -> Postgesql
+bot-e Lambda -> SNS Topic
 SNS Topic -> Flutter App
 
 

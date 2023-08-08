@@ -136,8 +136,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- return 10 similar questions
-CREATE OR REPLACE FUNCTION find_similar(ask_id_in TEXT)
+ --select ask_id from find_similar('Y7HXnornSAh')
+
+-- return similar questions 
+CREATE OR REPLACE FUNCTION similar(ask_id_in TEXT, row_limit INT DEFAULT 10)
 RETURNS SETOF ask
 AS $$
 DECLARE
@@ -158,7 +160,18 @@ BEGIN
     FROM ask a
     WHERE a.ask_id <> ask_id_in  -- Exclude the same ask_id
     ORDER BY a.embedding <-> target_embedding  -- Order by proximity to the target embedding
-    LIMIT 10;  -- Limit the results to 10 records
+    LIMIT row_limit;  -- Limit the results to the specified row limit
 END;
 $$ LANGUAGE plpgsql;
 
+
+CREATE OR REPLACE FUNCTION search(search_term TEXT, limit_rows INT DEFAULT 10)
+RETURNS SETOF ask AS $$
+BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM ask
+    WHERE search_vector @@ plainto_tsquery(search_term)
+    LIMIT limit_rows;
+END;
+$$ LANGUAGE plpgsql;

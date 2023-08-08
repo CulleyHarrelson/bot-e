@@ -62,13 +62,32 @@ CREATE TABLE ask (
     analysis JSONB NULL, -- response to request for meta analysis on question
     system_prompt TEXT NULL, -- response to request for meta analysis on question
     response TEXT NULL -- response to request for meta analysis on question
+    search_vector tsvector
 );
 
 CREATE INDEX idx_ask_moderation ON ask USING gin(moderation);
 CREATE INDEX idx_ask_analysis ON ask USING gin(analysis);
 CREATE INDEX idx_ask_hashtags ON ask USING gin (hashtags);
+CREATE INDEX idx_search_vector ON ask USING gin(search_vector);
 --CREATE INDEX idx_ask_embedding ON ask USING gin(embedding);
 
 -- Create an index on ask.added_at
 CREATE INDEX idx_ask_added_at ON ask (added_at);
+
+CREATE OR REPLACE FUNCTION update_search_vector()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.search_vector := 
+        setweight(to_tsvector(coalesce(NEW.title, '')), 'A') ||
+        setweight(to_tsvector(coalesce(NEW.prompt, '')), 'B') ||
+        setweight(to_tsvector(coalesce(array_to_string(NEW.hashtags, ' '), '')), 'C') ||
+        setweight(to_tsvector(coalesce(NEW.response, '')), 'D');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_update_search_vector
+BEFORE INSERT OR UPDATE ON ask
+FOR EACH ROW
+EXECUTE FUNCTION update_search_vector();
 

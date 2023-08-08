@@ -8,10 +8,18 @@ import openai
 import time
 import json
 import random
+from datetime import datetime
+
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 pg_password = os.getenv("POSTGRESQL_KEY")
+
+
+def custom_json_serializer(obj):
+    if isinstance(obj, datetime):
+        return obj.strftime("%Y-%m-%d %H:%M:%S")
+    raise TypeError("Type not serializable")
 
 
 def db_connect():
@@ -98,10 +106,15 @@ def get_asks(ask_ids):
         (valid_ask_ids,),
     )
     asks = cursor.fetchall()
+    # Convert the rows to a list of dictionaries
+    columns = [desc[0] for desc in cursor.description]
+    data = [dict(zip(columns, row)) for row in asks]
 
-    conn.close()
     cursor.close()
-    return asks
+    conn.close()
+    json_response = json.dumps(data, default=custom_json_serializer)
+    # json_response = json.dumps(data)
+    return json_response
 
 
 def get_ask(ask_id):
@@ -114,6 +127,30 @@ def get_ask(ask_id):
 
     # Otherwise, return None
     return None
+
+
+def similar(ask_id):
+    conn, cursor = db_connect()
+
+    # Filter out invalid ask_ids
+    if not validate_key(ask_id):
+        return "[]"
+
+    cursor.execute(
+        "select * from similar(%s)",
+        (ask_id,),
+    )
+    asks = cursor.fetchall()
+    # Convert the rows to a list of dictionaries
+    columns = [desc[0] for desc in cursor.description]
+    data = [dict(zip(columns, row)) for row in asks]
+
+    cursor.close()
+    conn.close()
+
+    # Convert the list of dictionaries to JSON
+    json_response = json.dumps(data, default=custom_json_serializer)
+    return json_response
 
 
 def moderate_asks():
