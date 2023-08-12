@@ -24,7 +24,7 @@ def custom_json_serializer(obj):
 
 def db_connect():
     conn = psycopg2.connect(
-        host="botty-dev.cluster-chki9sxssda8.us-east-2.rds.amazonaws.com",
+        host="bot-e.cluster-chki9sxssda8.us-east-2.rds.amazonaws.com",
         user="postgres",
         password=f"{pg_password}",
         port="5432",
@@ -65,6 +65,14 @@ def new_ask(conn, cursor, prompt):
     cursor.execute("SELECT * FROM new_ask(%s)", (prompt,))
     conn.commit()
     return cursor.fetchone()
+
+
+def post_ask(prompt):
+    conn, cursor = db_connect()
+    ask = new_ask(conn, cursor, prompt)
+    cursor.close()
+    conn.close()
+    return ask
 
 
 def moderation_api(input_text):

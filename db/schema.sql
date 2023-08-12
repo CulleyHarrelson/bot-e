@@ -61,8 +61,8 @@ CREATE TABLE ask (
     moderation JSONB NULL, -- response to request for meta analysis on question
     analysis JSONB NULL, -- response to request for meta analysis on question
     system_prompt TEXT NULL, -- response to request for meta analysis on question
-    response TEXT NULL -- response to request for meta analysis on question
-    search_vector tsvector
+    response TEXT NULL, -- response to request for meta analysis on question
+    search_vector tsvector NULL
 );
 
 CREATE INDEX idx_ask_moderation ON ask USING gin(moderation);
