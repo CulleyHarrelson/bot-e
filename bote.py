@@ -26,7 +26,7 @@ def db_connect():
     conn = psycopg2.connect(
         host="bot-e.cluster-chki9sxssda8.us-east-2.rds.amazonaws.com",
         user="postgres",
-        password=f"{pg_password}",
+        password="dF3*8eP$7s",
         port="5432",
     )
     cursor = conn.cursor(cursor_factory=DictCursor)
@@ -70,9 +70,12 @@ def new_ask(conn, cursor, prompt):
 def post_ask(prompt):
     conn, cursor = db_connect()
     ask = new_ask(conn, cursor, prompt)
+    embed_ask(conn, cursor, ask)
+    moderate_ask(conn, cursor, ask)
+    response = respond_to_ask(conn, cursor, ask)
     cursor.close()
     conn.close()
-    return ask
+    return response
 
 
 def moderation_api(input_text):
@@ -244,8 +247,8 @@ def respond_to_ask(conn, cursor, ask):
         analysis = '{"advice_type": "API_FAILURE"}'
 
     completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        # model="gpt-4",
+        model="gpt-4",
+        # model="gpt-3.5-turbo",
         messages=[
             {
                 "role": "system",
@@ -283,8 +286,8 @@ def analysis_api(user_message):
     with open("db/analysis_functions.json", "r") as file:
         functions = json.load(file)
     completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        # model="gpt-4",
+        model="gpt-4",
+        # model="gpt-3.5-turbo",
         messages=[
             {
                 "role": "system",
@@ -344,7 +347,6 @@ def load_random_dicts():
     random_dicts = random.sample(data, num_dicts)
 
     conn, cursor = db_connect()
-    # try:
     for idx, dictionary in enumerate(random_dicts, start=1):
         question = dictionary.get("question", "")
         if question:
@@ -355,11 +357,6 @@ def load_random_dicts():
 
             ask_id = ask["ask_id"]
             print(ask_id)
-    # except Exception as e:
-    #    print("An error occurred:", e)
-    # finally:
-    #    conn.close()
-    #    cursor.close()
 
 
 if __name__ == "__main__":
