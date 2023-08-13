@@ -10,10 +10,13 @@ import json
 import random
 from datetime import datetime
 
+from config import OPENAI_API_KEY, POSTGRESQL_KEY
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
-pg_password = os.getenv("POSTGRESQL_KEY")
+openai.api_key = OPENAI_API_KEY
+pg_password = POSTGRESQL_KEY
+# openai.api_key = os.getenv("OPENAI_API_KEY")
+# pg_password = os.getenv("POSTGRESQL_KEY")
 
 
 def custom_json_serializer(obj):
@@ -26,7 +29,7 @@ def db_connect():
     conn = psycopg2.connect(
         host="bot-e.cluster-chki9sxssda8.us-east-2.rds.amazonaws.com",
         user="postgres",
-        password="dF3*8eP$7s",
+        password=f"{pg_password}",
         port="5432",
     )
     cursor = conn.cursor(cursor_factory=DictCursor)
