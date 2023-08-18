@@ -2,14 +2,14 @@ docs/.ipynb_checkpoints
 .venv/
 .ipynb_checkpoints/
 config.py
-db/dear_prudence/articles/
-db/dear_prudence/index_pages/
-db/dear_prudence/results/
-db/dear_prudence/*.json
-db/savage_love/*.json
-db/savage_love/articles/
-db/savage_love/index_pages/
-db/savage_love/results/
-	__pycache__/
+data/dear_prudence/articles/
+data/dear_prudence/index_pages/
+data/dear_prudence/results/
+data/dear_prudence/*.json
+data/savage_love/*.json
+data/savage_love/articles/
+data/savage_love/index_pages/
+data/savage_love/results/
+__pycache__/
 web/node_modules/
 

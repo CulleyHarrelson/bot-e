@@ -1,6 +1,6 @@
 -- Check if the 'vector' extension exists, and create it if not
 CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS aws_lambda CASCADE;
+-- CREATE EXTENSION IF NOT EXISTS aws_lambda CASCADE;
 --CREATE EXTENSION pg_cron;
 
 DROP TYPE ask_status CASCADE;

@@ -237,7 +237,7 @@ def advise(ask):
 def respond_to_ask(conn, cursor, ask):
     user_message = ask["prompt"]
     start_time = time.time()
-    with open("db/prompt_bot-e_main.txt", "r") as file:
+    with open("data/prompt_bot-e_main.txt", "r") as file:
         system_message = file.read()
 
     analysis_json = analysis_api(user_message)
@@ -286,7 +286,7 @@ def respond_to_ask(conn, cursor, ask):
 
 
 def analysis_api(user_message):
-    with open("db/analysis_functions.json", "r") as file:
+    with open("data/analysis_functions.json", "r") as file:
         functions = json.load(file)
     completion = openai.ChatCompletion.create(
         model="gpt-4",
