@@ -6,6 +6,7 @@ data/dear_prudence/articles/
 data/dear_prudence/index_pages/
 data/dear_prudence/results/
 data/dear_prudence/*.json
+data/askamy/
 data/savage_love/*.json
 data/savage_love/articles/
 data/savage_love/index_pages/

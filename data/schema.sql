@@ -43,8 +43,6 @@ BEGIN
 END;
 $$;
 
-
-
 -- Drop the 'ask' table and its dependencies if they exist
 DROP TABLE IF EXISTS ask CASCADE;
 

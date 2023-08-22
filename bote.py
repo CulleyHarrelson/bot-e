@@ -27,9 +27,11 @@ def custom_json_serializer(obj):
 
 def db_connect():
     conn = psycopg2.connect(
-        host="bot-e.cluster-chki9sxssda8.us-east-2.rds.amazonaws.com",
-        user="postgres",
-        password=f"{pg_password}",
+        host="localhost",
+        dbname="bot-e",
+        # host="bot-e.cluster-chki9sxssda8.us-east-2.rds.amazonaws.com",
+        # user="postgres",
+        # password=f"{pg_password}",
         port="5432",
     )
     cursor = conn.cursor(cursor_factory=DictCursor)
@@ -67,6 +69,12 @@ def new_ask(conn, cursor, prompt):
     # insert a new ask record and get back the ask_id
     cursor.execute("SELECT * FROM new_ask(%s)", (prompt,))
     conn.commit()
+    return cursor.fetchone()
+
+
+def get_similar_answer(cursor, ask_id):
+    # insert a new ask record and get back the ask_id
+    cursor.execute("SELECT * FROM get_similar_answer(%s)", (ask_id,))
     return cursor.fetchone()
 
 
@@ -238,8 +246,11 @@ def respond_to_ask(conn, cursor, ask):
     user_message = ask["prompt"]
     start_time = time.time()
     with open("data/prompt_bot-e_main.txt", "r") as file:
-        system_message = file.read()
+        prompt = file.read()
 
+    ask_id = ask["ask_id"]
+    similar_answer = get_similar_answer(cursor, ask_id)[0]
+    system_message = f"{prompt}\n{similar_answer}"
     analysis_json = analysis_api(user_message)
     analysis_usage = analysis_json["usage"]["total_tokens"]
     response_message = analysis_json["choices"][0]["message"]
@@ -250,8 +261,8 @@ def respond_to_ask(conn, cursor, ask):
         analysis = '{"advice_type": "API_FAILURE"}'
 
     completion = openai.ChatCompletion.create(
-        model="gpt-4",
-        # model="gpt-3.5-turbo",
+        # model="gpt-4",
+        model="gpt-3.5-turbo",
         messages=[
             {
                 "role": "system",
@@ -289,8 +300,8 @@ def analysis_api(user_message):
     with open("data/analysis_functions.json", "r") as file:
         functions = json.load(file)
     completion = openai.ChatCompletion.create(
-        model="gpt-4",
-        # model="gpt-3.5-turbo",
+        # model="gpt-4",
+        model="gpt-3.5-turbo",
         messages=[
             {
                 "role": "system",
@@ -340,8 +351,8 @@ def analyze_asks():
 
 
 def load_random_dicts():
-    num_dicts = 100
-    with open("db/sample_data.json", "r") as json_file:
+    num_dicts = 2
+    with open("data/training_data.json", "r") as json_file:
         data = json.load(json_file)
 
     if not isinstance(data, list) or not all(isinstance(item, dict) for item in data):
@@ -362,12 +373,70 @@ def load_random_dicts():
             print(ask_id)
 
 
+def save_pair(conn, cursor, question, answer):
+    cursor.execute(
+        "INSERT INTO training_data(question, answer) VALUES(%s, %s)",
+        (question, answer),
+    )
+    conn.commit()
+
+
+def next_training(cursor):
+    # this returns an ask record that is in need of embedding
+    cursor.execute(
+        "SELECT * FROM training_data WHERE question_embedding IS NULL LIMIT 1"
+    )
+    return cursor.fetchone()
+
+
+def embed_training():
+    conn, cursor = db_connect()
+    while True:
+        training = next_training(cursor)
+        if training is None:
+            break
+
+        embedding = embedding_api(training["question"])
+        cursor.execute(
+            "UPDATE training_data SET question_embedding = %s WHERE training_data_id = %s",
+            (embedding, training["training_data_id"]),
+        )
+        conn.commit()
+        # time.sleep(0.8)
+    conn.close()
+    cursor.close()
+
+
+def process_sample_data():
+    file_path = "data/sample_data.json"
+    conn, cursor = db_connect()
+    try:
+        with open(file_path, "r") as json_file:
+            data = json.load(json_file)
+            for item in data:
+                if "question" in item and "answer" in item:
+                    question = item["question"]
+                    answer = item["answer"]
+                    save_pair(conn, cursor, question, answer)
+                else:
+                    print("Invalid data format in JSON item:", item)
+    except FileNotFoundError:
+        print("File not found:", file_path)
+    except json.JSONDecodeError:
+        print("Error decoding JSON in the file:", file_path)
+    finally:
+        conn.close()
+        cursor.close()
+
+
 if __name__ == "__main__":
-    load_random_dicts()
+    # process_sample_data()
+    # embed_training()
+    # load_random_dicts()
     # analyze_asks()
     # get_ask("MGlpMj2TunU")
 
-    # load_random_dicts()
+    load_random_dicts()
     # embed_asks()
 # moderate_asks()
 
