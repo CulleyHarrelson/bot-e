@@ -72,9 +72,10 @@ def new_ask(conn, cursor, prompt):
     return cursor.fetchone()
 
 
-def get_similar_answer(cursor, ask_id):
+def get_similar(cursor, ask_id):
     # insert a new ask record and get back the ask_id
-    cursor.execute("SELECT * FROM get_similar_answer(%s)", (ask_id,))
+
+    cursor.execute("select question, answer from get_similar(%s)", (ask_id,))
     return cursor.fetchone()
 
 
@@ -249,8 +250,14 @@ def respond_to_ask(conn, cursor, ask):
         prompt = file.read()
 
     ask_id = ask["ask_id"]
-    similar_answer = get_similar_answer(cursor, ask_id)[0]
-    system_message = f"{prompt}\n{similar_answer}"
+    similar = get_similar(cursor, ask_id)
+    # print(similar)
+
+    similar_answer = similar["answer"]
+    similar_question = similar["question"]
+    system_message = (
+        f"{prompt}\nquestion:\n{similar_question}\nanswer:\n{similar_answer}"
+    )
     analysis_json = analysis_api(user_message)
     analysis_usage = analysis_json["usage"]["total_tokens"]
     response_message = analysis_json["choices"][0]["message"]
@@ -351,14 +358,13 @@ def analyze_asks():
 
 
 def load_random_dicts():
-    num_dicts = 2
     with open("data/training_data.json", "r") as json_file:
         data = json.load(json_file)
 
     if not isinstance(data, list) or not all(isinstance(item, dict) for item in data):
         raise ValueError("The JSON file should contain a list of dictionaries.")
 
-    random_dicts = random.sample(data, num_dicts)
+    random_dicts = random.sample(data, len(data))  # shuffling the data
 
     conn, cursor = db_connect()
     for idx, dictionary in enumerate(random_dicts, start=1):
@@ -402,13 +408,14 @@ def embed_training():
             (embedding, training["training_data_id"]),
         )
         conn.commit()
+        print("saved embeddings for: ", training["training_data_id"])
         # time.sleep(0.8)
     conn.close()
     cursor.close()
 
 
 def process_sample_data():
-    file_path = "data/sample_data.json"
+    file_path = "data/sample_data/consolidated.json"
     conn, cursor = db_connect()
     try:
         with open(file_path, "r") as json_file:
@@ -429,7 +436,45 @@ def process_sample_data():
         cursor.close()
 
 
+def export_divergent_records():
+    conn, cursor = db_connect()
+
+    # First, get a random record's question_embedding as the reference
+    cursor.execute(
+        "SELECT question_embedding FROM training_data ORDER BY RANDOM() LIMIT 1;"
+    )
+    reference_embedding = cursor.fetchone()[0]
+
+    # Then, fetch the 50 most divergent records from the reference embedding
+    query = """
+    SELECT training_data_id, question, answer
+    FROM training_data
+    ORDER BY training_data.question_embedding <-> %s DESC
+    LIMIT 50;
+    """
+    cursor.execute(query, (reference_embedding,))
+    results = cursor.fetchall()
+
+    # Convert the results to a list of dictionaries
+    records = [
+        {"training_data_id": r[0], "question": r[1], "answer": r[2]} for r in results
+    ]
+
+    # Export the records to a pretty-printed JSON file
+    with open("divergent_records.json", "w") as f:
+        json.dump(records, f, ensure_ascii=False, indent=4)
+
+    # Close the database connection
+    cursor.close()
+    conn.close()
+
+
+# Call the function
+# export_divergent_records()
+
+
 if __name__ == "__main__":
+    # export_divergent_records()
     # process_sample_data()
     # embed_training()
     # load_random_dicts()

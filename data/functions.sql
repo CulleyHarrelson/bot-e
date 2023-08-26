@@ -177,14 +177,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION get_similar_answer(aid TEXT) RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION get_similar(aid TEXT) RETURNS TABLE(question TEXT, answer TEXT) AS $$
 DECLARE
     ask_embedding vector(1536);
     similarity_threshold FLOAT := 0.9; -- Adjust the threshold as needed
-    result_answer TEXT;
 BEGIN
     -- Fetch the ask's embedding
-    SELECT embedding INTO ask_embedding FROM ask WHERE ask_id = get_similar_answer.aid;
+    SELECT embedding INTO ask_embedding FROM ask WHERE ask_id = aid;
 
     -- Ensure the ask's embedding is not null
     IF ask_embedding IS NULL THEN
@@ -192,16 +191,23 @@ BEGIN
     END IF;
 
     -- Find similar training_data entries using pgvector's knn cosine similarity
-    SELECT answer INTO result_answer
-    FROM training_data
-    WHERE question_embedding <-> ask_embedding < similarity_threshold
-    ORDER BY question_embedding <-> ask_embedding
+    RETURN QUERY
+    SELECT T.question, T.answer
+    FROM training_data AS T
+    WHERE T.question_embedding <-> ask_embedding < similarity_threshold
+    ORDER BY T.question_embedding <-> ask_embedding
     LIMIT 1;
 
-    RETURN result_answer;
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        RETURN NULL;
+        RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+-- returns bot-e version to tag each ask row
+CREATE OR REPLACE FUNCTION getVersion() RETURNS text AS $$
+BEGIN
+    RETURN '0.1';
 END;
 $$ LANGUAGE plpgsql;
 
