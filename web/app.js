@@ -7,6 +7,7 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var tosRouter = require('./routes/tos');
 var aboutRouter = require('./routes/about');
+var questionRouter = require('./routes/question');
 var signupRouter = require('./routes/signup');
 
 var app = express();
@@ -20,10 +21,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-//app.use(express.static('public'));
 
 app.use('/', indexRouter);
 app.use('/tos', tosRouter);
+app.use('/q', questionRouter);
 app.use('/about', aboutRouter);
 app.use('/signup', signupRouter);
 
