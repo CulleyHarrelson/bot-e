@@ -1,8 +1,10 @@
 from flask import Flask, jsonify, request
 import bote
-import json
 from datetime import datetime
-import os
+
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
+
 
 app = Flask(__name__)
 
@@ -39,17 +41,18 @@ def get_similar(ask_id):
 @app.route("/ask", methods=["POST"])
 def post_ask():
     try:
-        # Get the prompt text from the request's JSON body
+        # Get the question text from the request's JSON body
         data = request.get_json()
 
-        # Check if the "prompt" field is present and not empty
-        if "prompt" not in data or not data["prompt"]:
-            return jsonify({"error": "Prompt is required."}), 400
+        # Check if the "question" field is present and not empty
+        if "question" not in data or not data["question"]:
+            return jsonify({"error": "question is required."}), 400
 
-        prompt = data["prompt"]
+        question = data["question"]
 
-        # Process the prompt using bote or any other necessary method
-        return bote.post_ask(prompt)
+        # Process the question using bote or any other necessary method
+        ask = bote.post_ask(question)
+        return ask
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

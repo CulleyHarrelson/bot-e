@@ -1,5 +1,6 @@
 # 3408
 import psycopg2
+import requests
 
 # DictCursor returns data as dictionaries instead of tuples
 from psycopg2.extras import DictCursor
@@ -85,6 +86,7 @@ def post_ask(prompt):
     embed_ask(conn, cursor, ask)
     moderate_ask(conn, cursor, ask)
     response = respond_to_ask(conn, cursor, ask)
+
     cursor.close()
     conn.close()
     return response
@@ -141,15 +143,20 @@ def get_asks(ask_ids):
 
 
 def get_ask(ask_id):
-    # Call get_asks with a list containing a single ask_id
-    asks = get_asks([ask_id])
+    conn, cursor = db_connect()
 
-    # If get_asks returned a non-empty list, return the first element
-    if asks:
-        return asks[0]
+    if not validate_key(ask_id):
+        return False
 
-    # Otherwise, return None
-    return None
+    cursor.execute(
+        "select * from ask where ask_id = %s",
+        (ask_id,),
+    )
+    ask = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    json_response = json.dumps(ask, default=custom_json_serializer)
+    return json_response
 
 
 def similar(ask_id):
@@ -245,13 +252,12 @@ def advise(ask):
 
 def respond_to_ask(conn, cursor, ask):
     user_message = ask["prompt"]
-    start_time = time.time()
+    # start_time = time.time()
     with open("data/prompt_bot-e_main.txt", "r") as file:
         prompt = file.read()
 
     ask_id = ask["ask_id"]
     similar = get_similar(cursor, ask_id)
-    # print(similar)
 
     similar_answer = similar["answer"]
     similar_question = similar["question"]
@@ -259,7 +265,6 @@ def respond_to_ask(conn, cursor, ask):
         f"{prompt}\nquestion:\n{similar_question}\nanswer:\n{similar_answer}"
     )
     analysis_json = analysis_api(user_message)
-    analysis_usage = analysis_json["usage"]["total_tokens"]
     response_message = analysis_json["choices"][0]["message"]
 
     if response_message.get("function_call"):
@@ -283,7 +288,6 @@ def respond_to_ask(conn, cursor, ask):
     )
 
     response_message = completion["choices"][0]["message"]["content"]
-    response_usage = completion["usage"]["total_tokens"]
     cursor.execute(
         "update ask set response = %s, system_prompt = %s, analysis = %s where ask_id = %s",
         (
@@ -294,12 +298,12 @@ def respond_to_ask(conn, cursor, ask):
         ),
     )
     conn.commit()
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(
-        f"Ask ID: {ask['ask_id']}, Analysis Usage: {analysis_usage}, Response Usage: {response_usage}, Time taken: {elapsed_time} seconds"
-    )
-    return True
+    # end_time = time.time()
+    # elapsed_time = end_time - start_time
+    # print(
+    #    f"Ask ID: {ask['ask_id']}, Analysis Usage: {analysis_usage}, Response Usage: {response_usage}, Time taken: {elapsed_time} se#conds"
+    # )
+    return get_ask(ask["ask_id"])
     # return completion
 
 
@@ -332,7 +336,7 @@ def analyze_asks():
         if ask is None:
             break
 
-        start_time = time.time()
+        # start_time = time.time()
         analysis = analysis_api(ask["prompt"])
         response_message = analysis["choices"][0]["message"]
 
@@ -341,17 +345,17 @@ def analyze_asks():
         else:
             response = '{"advice_type": "API_FAILURE"}'
 
-        usage = analysis["usage"]["total_tokens"]
+        # usage = analysis["usage"]["total_tokens"]
         cursor.execute(
             "update ask set analysis = %s where ask_id = %s",
             (json.dumps(response), ask["ask_id"]),
         )
         conn.commit()
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        print(
-            f"Ask ID: {ask['ask_id']}, Usage: {usage}, Time taken: {elapsed_time} seconds"
-        )
+        # end_time = time.time()
+        # elapsed_time = end_time - start_time
+        # print(
+        #    f"Ask ID: {ask['ask_id']}, Usage: {usage}, Time taken: {elapsed_time} seconds"
+        # )
 
     conn.close()
     cursor.close()
@@ -366,17 +370,22 @@ def load_random_dicts():
 
     random_dicts = random.sample(data, len(data))  # shuffling the data
 
-    conn, cursor = db_connect()
+    # conn, cursor = db_connect()
     for idx, dictionary in enumerate(random_dicts, start=1):
         question = dictionary.get("question", "")
         if question:
-            ask = new_ask(conn, cursor, question)
-            embed_ask(conn, cursor, ask)
-            moderate_ask(conn, cursor, ask)
-            respond_to_ask(conn, cursor, ask)
-
-            ask_id = ask["ask_id"]
-            print(ask_id)
+            prompt_data = {"question": question}
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(
+                "http://localhost:6464/ask",
+                data=json.dumps(prompt_data),
+                headers=headers,
+            )
+            if response.status_code == 200:
+                data = response.json()
+                print(f"new question: {data[0]}")
+            else:
+                print(response.status_code)
 
 
 def save_pair(conn, cursor, question, answer):
@@ -477,11 +486,11 @@ if __name__ == "__main__":
     # export_divergent_records()
     # process_sample_data()
     # embed_training()
-    # load_random_dicts()
+    load_random_dicts()
     # analyze_asks()
     # get_ask("MGlpMj2TunU")
 
-    load_random_dicts()
+    # load_random_dicts()
     # embed_asks()
 # moderate_asks()
 
