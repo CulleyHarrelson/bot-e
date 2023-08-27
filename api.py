@@ -28,6 +28,16 @@ def get_rows_by_ids(array_of_ids):
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/question/<ask_id>", methods=["GET"])
+def get_ask_by_id(ask_id):
+    try:
+        # Get the rows from the database
+        return bote.get_ask(ask_id)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/similar/<ask_id>", methods=["GET"])
 def get_similar(ask_id):
     try:

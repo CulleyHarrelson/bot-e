@@ -4,9 +4,7 @@ import requests
 
 # DictCursor returns data as dictionaries instead of tuples
 from psycopg2.extras import DictCursor
-import os
 import openai
-import time
 import json
 import random
 from datetime import datetime
@@ -142,7 +140,7 @@ def get_asks(ask_ids):
     return json_response
 
 
-def get_ask(ask_id):
+def get_ask(ask_id, return_json=True):
     conn, cursor = db_connect()
 
     if not validate_key(ask_id):
@@ -155,8 +153,11 @@ def get_ask(ask_id):
     ask = cursor.fetchone()
     cursor.close()
     conn.close()
-    json_response = json.dumps(ask, default=custom_json_serializer)
-    return json_response
+    if return_json:
+        json_response = json.dumps(ask, default=custom_json_serializer)
+        return json_response
+    else:
+        return ask
 
 
 def similar(ask_id):
@@ -483,10 +484,14 @@ def export_divergent_records():
 
 
 if __name__ == "__main__":
+    conn, cursor = db_connect()
+    ask = get_ask("49muDs1bm-R", return_json=False)
+    response = respond_to_ask(conn, cursor, ask)
+    # print(response)
     # export_divergent_records()
     # process_sample_data()
     # embed_training()
-    load_random_dicts()
+    # load_random_dicts()
     # analyze_asks()
     # get_ask("MGlpMj2TunU")
 

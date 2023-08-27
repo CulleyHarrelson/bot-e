@@ -26,7 +26,7 @@ router.post('/',
         const apiResponse = await axios.post('http://127.0.0.1:6464/ask', { question: req.body.question });
         res.redirect("/q/" + apiResponse.data[0]);
         
-        console.log("question body:", req.body.question);
+        //console.log("question body:", req.body.question);
 
         // The form data is valid. Include the API response in the rendered view.
         // salkdfj

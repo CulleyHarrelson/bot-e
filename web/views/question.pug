@@ -6,8 +6,11 @@ block content
       h1.cell.small-12= title
     .grid-x.grid-margin-x.align-left
       .cell.small-12.medium-6
-        p show the question
+        p.cell.small-12 #{questionId}
     .grid-x.grid-margin-x
       .cell.small-12.medium-6
-        a.button(href="/") Back
+        p.cell.small-12 !{question}
+    .grid-x.grid-margin-x
+      .cell.small-12.medium-6
+        p.cell.small-12 !{answer}
 
