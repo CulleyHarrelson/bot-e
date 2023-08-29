@@ -23,17 +23,18 @@ router.post('/',
     else {
       try {
         // Post the question to the local API server and store the result.
-        const apiResponse = await axios.post('http://127.0.0.1:6464/ask', { question: req.body.question });
-        res.redirect("/q/" + apiResponse.data[0]);
+        const apiResponse = await axios.post('http://127.0.0.1:6464/question', { question: req.body.question });
+        console.log("api response:", apiResponse.data['question_id']);
+
+        res.redirect("/question/" + apiResponse.data['question_id']);
         
-        //console.log("question body:", req.body.question);
 
         // The form data is valid. Include the API response in the rendered view.
         // salkdfj
-        res.render('index', { 
-            title: 'bot-e', 
-            question: apiResponse.data[0]
-        });
+        //res.render('index', { 
+        //    title: 'bot-e', 
+        //    question: apiResponse.data[0]
+        //});
       } catch (err) {
         // Handle error (e.g., API server might be down or there was a network error)
         res.render('index', { title: 'bot-e', errors: [{msg: 'There was an error sending the question to the API.'}] });

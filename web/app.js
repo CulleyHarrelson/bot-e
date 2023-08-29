@@ -24,7 +24,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/tos', tosRouter);
-app.use('/q', questionRouter);
+app.use('/question', questionRouter);
 app.use('/about', aboutRouter);
 app.use('/signup', signupRouter);
 

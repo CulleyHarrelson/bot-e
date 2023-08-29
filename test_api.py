@@ -19,7 +19,7 @@ class FlaskAppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(data, list)
 
-    def test_post_ask(self):
+    def test_post_question(self):
         prompt_data = {"question": "what is the meaning of human life?"}
         headers = {"Content-Type": "application/json"}
         response = self.app.post("/ask", data=json.dumps(prompt_data), headers=headers)
@@ -27,11 +27,13 @@ class FlaskAppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         # Check the response format based on the actual behavior
-        self.assertIsInstance(data, list)
-        self.assertTrue(len(data[0]) == 11, "The ask_id is not 11 characters long")
+        self.assertIsInstance(data, dict)
+        self.assertTrue(
+            len(data["question_id"]) == 11, "The question_id is not 11 characters long"
+        )
         # ... Other assertions as needed
 
-    def test_post_ask_missing_prompt(self):
+    def test_post_question_missing_prompt(self):
         prompt_data = {}
         headers = {"Content-Type": "application/json"}
         response = self.app.post("/ask", data=json.dumps(prompt_data), headers=headers)

@@ -14,8 +14,13 @@ from config import OPENAI_API_KEY, POSTGRESQL_KEY
 
 openai.api_key = OPENAI_API_KEY
 pg_password = POSTGRESQL_KEY
-# openai.api_key = os.getenv("OPENAI_API_KEY")
-# pg_password = os.getenv("POSTGRESQL_KEY")
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 
 def custom_json_serializer(obj):
@@ -37,57 +42,61 @@ def db_connect():
     return conn, cursor
 
 
+def new_question(conn, cursor, question):
+    question = question.strip()
+    if len(question) < 1:
+        return {}
+    # insert a new question record and get back the question_id
+    cursor.execute("SELECT * FROM new_question(%s)", (question,))
+    conn.commit()
+    result_tuple = cursor.fetchone()
+
+    column_names = [desc[0] for desc in cursor.description]
+    result_dict = dict(zip(column_names, result_tuple))
+
+    return result_dict
+
+
 def next_embedding(cursor):
-    # this returns an ask record that is in need of embedding
+    # this returns an question record that is in need of embedding
     cursor.execute("SELECT * FROM next_embedding()")
     return cursor.fetchone()
 
 
 def next_moderation(cursor):
-    # this returns an ask record that is in need of moderation
+    # this returns an question record that is in need of moderation
     cursor.execute("SELECT * FROM next_moderation()")
     return cursor.fetchone()
 
 
 def next_analysis(cursor):
-    # this returns an ask record that is in need of analysis
+    # this returns an question record that is in need of analysis
     cursor.execute("SELECT * FROM next_analysis()")
     return cursor.fetchone()
 
 
-def random_ask(cursor):
-    # this returns an ask record that is in need of analysis
-    cursor.execute("SELECT * FROM ask order by RANDOM() limit 1")
+def random_question(cursor):
+    # this returns an question record that is in need of analysis
+    cursor.execute("SELECT * FROM question order by RANDOM() limit 1")
     return cursor.fetchone()
 
 
-def new_ask(conn, cursor, prompt):
-    prompt = prompt.strip()
-    if len(prompt) < 1:
-        return {}
-    # insert a new ask record and get back the ask_id
-    cursor.execute("SELECT * FROM new_ask(%s)", (prompt,))
-    conn.commit()
+def get_similar(cursor, question_id):
+    # insert a new question record and get back the question_id
+
+    cursor.execute("select question, answer from get_similar(%s)", (question_id,))
     return cursor.fetchone()
 
 
-def get_similar(cursor, ask_id):
-    # insert a new ask record and get back the ask_id
-
-    cursor.execute("select question, answer from get_similar(%s)", (ask_id,))
-    return cursor.fetchone()
-
-
-def post_ask(prompt):
+def post_question(question):
     conn, cursor = db_connect()
-    ask = new_ask(conn, cursor, prompt)
-    embed_ask(conn, cursor, ask)
-    moderate_ask(conn, cursor, ask)
-    response = respond_to_ask(conn, cursor, ask)
+    question = new_question(conn, cursor, question)
+    embed_question(conn, cursor, question)
+    moderate_question(conn, cursor, question)
 
     cursor.close()
     conn.close()
-    return response
+    return question
 
 
 def moderation_api(input_text):
@@ -118,63 +127,71 @@ def validate_key(key):
     return True
 
 
-def get_asks(ask_ids):
+def get_questions(question_ids):
     conn, cursor = db_connect()
 
-    # Filter out invalid ask_ids
-    valid_ask_ids = [ask_id for ask_id in ask_ids if validate_key(ask_id)]
+    # Filter out invalid question_ids
+    valid_question_ids = [
+        question_id for question_id in question_ids if validate_key(question_id)
+    ]
 
     cursor.execute(
-        "select * from ask where ask_id = ANY(%s)",
-        (valid_ask_ids,),
+        "select * from question where question_id = ANY(%s)",
+        (valid_question_ids,),
     )
-    asks = cursor.fetchall()
+    questions = cursor.fetchall()
     # Convert the rows to a list of dictionaries
     columns = [desc[0] for desc in cursor.description]
-    data = [dict(zip(columns, row)) for row in asks]
+    data = [dict(zip(columns, row)) for row in questions]
 
     cursor.close()
     conn.close()
     json_response = json.dumps(data, default=custom_json_serializer)
-    # json_response = json.dumps(data)
     return json_response
 
 
-def get_ask(ask_id, return_json=True):
+def get_question(question_id, return_json=True):
     conn, cursor = db_connect()
 
-    if not validate_key(ask_id):
-        return False
+    if not validate_key(question_id):
+        return json.dumps([])
 
     cursor.execute(
-        "select * from ask where ask_id = %s",
-        (ask_id,),
+        "SELECT * FROM question WHERE question_id = %s",
+        (question_id,),
     )
-    ask = cursor.fetchone()
+    question = cursor.fetchone()
     cursor.close()
     conn.close()
+
+    if not question:
+        return json.dumps([])
+
+    columns = [desc[0] for desc in cursor.description]
+    data = dict(zip(columns, question))
+
     if return_json:
-        json_response = json.dumps(ask, default=custom_json_serializer)
-        return json_response
+        json_data = json.dumps(data, cls=DateTimeEncoder)
+        return json_data
     else:
-        return ask
+        return data
 
 
-def similar(ask_id):
+def similar(question_id):
     conn, cursor = db_connect()
 
-    # Filter out invalid ask_ids
-    if not validate_key(ask_id):
+    # Filter out invalid question_ids
+    if not validate_key(question_id):
         return "[]"
 
     cursor.execute(
         "select * from similar(%s)",
-        (ask_id,),
+        (question_id,),
     )
-    asks = cursor.fetchall()
+    questions = cursor.fetchall()
     # Convert the rows to a list of dictionaries
     columns = [desc[0] for desc in cursor.description]
-    data = [dict(zip(columns, row)) for row in asks]
+    data = [dict(zip(columns, row)) for row in questions]
 
     cursor.close()
     conn.close()
@@ -184,17 +201,17 @@ def similar(ask_id):
     return json_response
 
 
-def moderate_asks():
+def moderate_questions():
     conn, cursor = db_connect()
     while True:
-        ask = next_moderation(cursor)
-        if ask is None:
+        question = next_moderation(cursor)
+        if question is None:
             break
 
-        moderation = moderation_api(ask["prompt"])
+        moderation = moderation_api(question["question"])
         cursor.execute(
-            "update ask set moderation = %s where ask_id = %s",
-            (json.dumps(moderation), ask["ask_id"]),
+            "update question set moderation = %s where question_id = %s",
+            (json.dumps(moderation), question["question_id"]),
         )
         conn.commit()
         # time.sleep(0.8)
@@ -207,35 +224,35 @@ def embedding_api(input_text):
     return response["data"][0]["embedding"]
 
 
-def embed_ask(conn, cursor, ask):
-    embedding = embedding_api(ask["prompt"])
+def embed_question(conn, cursor, question):
+    embedding = embedding_api(question["question"])
     cursor.execute(
-        "update ask set embedding = %s where ask_id = %s",
-        (embedding, ask["ask_id"]),
+        "update question set embedding = %s where question_id = %s",
+        (embedding, question["question_id"]),
     )
     conn.commit()
 
 
-def moderate_ask(conn, cursor, ask):
-    moderation = moderation_api(ask["prompt"])
+def moderate_question(conn, cursor, question):
+    moderation = moderation_api(question["question"])
     cursor.execute(
-        "update ask set moderation = %s where ask_id = %s",
-        (json.dumps(moderation), ask["ask_id"]),
+        "update question set moderation = %s where question_id = %s",
+        (json.dumps(moderation), question["question_id"]),
     )
     conn.commit()
 
 
-def embed_asks():
+def embed_questions():
     conn, cursor = db_connect()
     while True:
-        ask = next_embedding(cursor)
-        if ask is None:
+        question = next_embedding(cursor)
+        if question is None:
             break
 
-        embedding = embedding_api(ask["prompt"])
+        embedding = embedding_api(question["question"])
         cursor.execute(
-            "update ask set embedding = %s where ask_id = %s",
-            (embedding, ask["ask_id"]),
+            "update question set embedding = %s where question_id = %s",
+            (embedding, question["question_id"]),
         )
         conn.commit()
         # time.sleep(0.8)
@@ -243,35 +260,28 @@ def embed_asks():
     cursor.close()
 
 
-def content_compliance(ask):
-    return ask
+def content_compliance(question):
+    return question
 
 
-def advise(ask):
-    return ask
+def advise(question):
+    return question
 
 
-def respond_to_ask(conn, cursor, ask):
-    user_message = ask["prompt"]
+def respond_to_question(conn, cursor, question):
+    user_message = question["question"]
     # start_time = time.time()
     with open("data/prompt_bot-e_main.txt", "r") as file:
-        prompt = file.read()
+        question = file.read()
 
-    ask_id = ask["ask_id"]
-    similar = get_similar(cursor, ask_id)
+    question_id = question["question_id"]
+    similar = get_similar(cursor, question_id)
 
     similar_answer = similar["answer"]
     similar_question = similar["question"]
     system_message = (
-        f"{prompt}\nquestion:\n{similar_question}\nanswer:\n{similar_answer}"
+        f"{question}\nquestion:\n{similar_question}\nanswer:\n{similar_answer}"
     )
-    analysis_json = analysis_api(user_message)
-    response_message = analysis_json["choices"][0]["message"]
-
-    if response_message.get("function_call"):
-        analysis = response_message["function_call"]["arguments"]
-    else:
-        analysis = '{"advice_type": "API_FAILURE"}'
 
     completion = openai.ChatCompletion.create(
         # model="gpt-4",
@@ -290,76 +300,15 @@ def respond_to_ask(conn, cursor, ask):
 
     response_message = completion["choices"][0]["message"]["content"]
     cursor.execute(
-        "update ask set response = %s, system_prompt = %s, analysis = %s where ask_id = %s",
+        "update question set response = %s, system_prompt = %s where question_id = %s",
         (
             json.dumps(response_message),
             system_message,
-            json.dumps(analysis),
-            ask["ask_id"],
+            question["question_id"],
         ),
     )
     conn.commit()
-    # end_time = time.time()
-    # elapsed_time = end_time - start_time
-    # print(
-    #    f"Ask ID: {ask['ask_id']}, Analysis Usage: {analysis_usage}, Response Usage: {response_usage}, Time taken: {elapsed_time} se#conds"
-    # )
-    return get_ask(ask["ask_id"])
-    # return completion
-
-
-def analysis_api(user_message):
-    with open("data/analysis_functions.json", "r") as file:
-        functions = json.load(file)
-    completion = openai.ChatCompletion.create(
-        # model="gpt-4",
-        model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": "Assess the author of the following message.  It should be a message asking for advice.",
-            },
-            {
-                "role": "user",
-                "content": f"{user_message}",
-            },
-        ],
-        functions=functions,
-        function_call={"name": "extract_data"},
-    )
-    return completion
-
-
-def analyze_asks():
-    conn, cursor = db_connect()
-    while True:
-        ask = next_analysis(cursor)
-        if ask is None:
-            break
-
-        # start_time = time.time()
-        analysis = analysis_api(ask["prompt"])
-        response_message = analysis["choices"][0]["message"]
-
-        if response_message.get("function_call"):
-            response = response_message["function_call"]["arguments"]
-        else:
-            response = '{"advice_type": "API_FAILURE"}'
-
-        # usage = analysis["usage"]["total_tokens"]
-        cursor.execute(
-            "update ask set analysis = %s where ask_id = %s",
-            (json.dumps(response), ask["ask_id"]),
-        )
-        conn.commit()
-        # end_time = time.time()
-        # elapsed_time = end_time - start_time
-        # print(
-        #    f"Ask ID: {ask['ask_id']}, Usage: {usage}, Time taken: {elapsed_time} seconds"
-        # )
-
-    conn.close()
-    cursor.close()
+    return get_question(question["question_id"])
 
 
 def load_random_dicts():
@@ -375,11 +324,11 @@ def load_random_dicts():
     for idx, dictionary in enumerate(random_dicts, start=1):
         question = dictionary.get("question", "")
         if question:
-            prompt_data = {"question": question}
+            question_data = {"question": question}
             headers = {"Content-Type": "application/json"}
             response = requests.post(
-                "http://localhost:6464/ask",
-                data=json.dumps(prompt_data),
+                "http://localhost:6464/question",
+                data=json.dumps(question_data),
                 headers=headers,
             )
             if response.status_code == 200:
@@ -398,7 +347,7 @@ def save_pair(conn, cursor, question, answer):
 
 
 def next_training(cursor):
-    # this returns an ask record that is in need of embedding
+    # this returns an question record that is in need of embedding
     cursor.execute(
         "SELECT * FROM training_data WHERE question_embedding IS NULL LIMIT 1"
     )
@@ -485,21 +434,5 @@ def export_divergent_records():
 
 if __name__ == "__main__":
     conn, cursor = db_connect()
-    ask = get_ask("49muDs1bm-R", return_json=False)
-    response = respond_to_ask(conn, cursor, ask)
-    # print(response)
-    # export_divergent_records()
-    # process_sample_data()
-    # embed_training()
-    # load_random_dicts()
-    # analyze_asks()
-    # get_ask("MGlpMj2TunU")
-
-    # load_random_dicts()
-    # embed_asks()
-# moderate_asks()
-
-# conn, cursor = db_connect()
-# ask = random_ask(cursor)
-# content = ask["analysis"]["choices"][0]["message"]["content"]
-# print(json.dumps(content, indent=5))
+    question = get_question("KiV4OnQED4V", return_json=False)
+    response = respond_to_question(conn, cursor, question)

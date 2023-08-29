@@ -1,6 +1,8 @@
 extends layout
+include mixins
 
 block content
+  +topBar
   .grid-container
     .grid-x.grid-margin-x
       h1.cell.small-12= title

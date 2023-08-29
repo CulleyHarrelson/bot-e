@@ -1,0 +1,15 @@
+mixin topBar
+  .top-bar
+    .top-bar-left
+      ul.dropdown.menu(data-dropdown-menu)
+        li.menu-text bot-e
+        li
+          a(href='/') new question
+        li
+          a(href='/about') about
+        li
+          a(href='/tos') terms
+    .top-bar-right
+      ul.menu
+        li: input(type='search', placeholder='coming soon :)')
+        li: button.button(type='button') Search

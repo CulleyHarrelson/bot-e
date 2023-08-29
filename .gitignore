@@ -12,5 +12,5 @@ data/savage_love/articles/
 data/savage_love/index_pages/
 data/savage_love/results/
 __pycache__/
-web/node_modules/
+web/node_modules/*
 

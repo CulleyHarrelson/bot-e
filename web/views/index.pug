@@ -1,19 +1,13 @@
 extends layout
+include mixins
 
 block content
+  +topBar
   .grid-container.text-center
     .grid-x.grid-margin-x.align-center 
       h1.cell.small-12= title
-      if question
-        p.cell.small-12 Thank you for the question: #{question}
-      else
-        // Added an empty div with a class to create space between the text and the textarea
-        div.cell.small-12(class="spacer")
-        p.cell.small-12.text-center What's going on?
-        form.cell.small-12.large-6(method="POST", action="/")
-          textarea(name="question", required, style="height: 200px; width: 100%;")
-          button.button.large.success(type="submit") Get Advice
-        p.cell.footer.text-center 
-          a(href="/tos") terms of service 
-          i.fi-lightbulb 
-          a(href="/about") about
+      div.cell.small-12(class="spacer")
+      p.cell.small-12.text-center What's going on?
+      form.cell.small-12.large-6(method="POST", action="/")
+        textarea(name="question", required, style="height: 200px; width: 100%;")
+        button.button.large.success(type="submit") Get Advice

@@ -22,34 +22,34 @@ def get_rows_by_ids(array_of_ids):
         ids_list = array_of_ids.split(",")
 
         # Get the rows from the database
-        return bote.get_asks(ids_list)
+        return bote.get_questions(ids_list)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/question/<ask_id>", methods=["GET"])
-def get_ask_by_id(ask_id):
+@app.route("/question/<question_id>", methods=["GET"])
+def get_question_by_id(question_id):
     try:
         # Get the rows from the database
-        return bote.get_ask(ask_id)
+        return bote.get_question(question_id)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/similar/<ask_id>", methods=["GET"])
-def get_similar(ask_id):
+@app.route("/similar/<question_id>", methods=["GET"])
+def get_similar(question_id):
     try:
         # Get the rows from the database
-        return bote.similar(ask_id)
+        return bote.similar(question_id)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
 @app.route("/ask", methods=["POST"])
-def post_ask():
+def post_question():
     try:
         # Get the question text from the request's JSON body
         data = request.get_json()
@@ -61,8 +61,8 @@ def post_ask():
         question = data["question"]
 
         # Process the question using bote or any other necessary method
-        ask = bote.post_ask(question)
-        return ask
+        question = bote.post_question(question)
+        return question
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
