@@ -307,14 +307,13 @@ def advise(question):
 def respond_to_question(conn, cursor, data):
     user_message = data["question"]
     # start_time = time.time()
-    with open("data/prompt_bot-e_main.txt", "r") as file:
+    with open("data/system_prompt.txt", "r") as file:
         system_prompt = file.read()
 
     question_id = data["question_id"]
+    # with open("data/question_functions.json", "r") as file:
+    #    functions = json.load(file)
 
-    # similar = get_similar(cursor, question_id)
-    # similar_answer = similar["answer"]
-    # similar_question = similar["question"]
     system_message = (
         # f"{system_prompt}\nquestion:\n{similar_question}\nanswer:\n{similar_answer}"
         f"{system_prompt}"
@@ -333,9 +332,19 @@ def respond_to_question(conn, cursor, data):
                 "content": f"{user_message}",
             },
         ],
+        # functions=functions,
+        # function_call={"name": "extract_data"},
     )
 
+    # function_message = completion["choices"][0]["message"]
+
+    # if function_message.get("function_call"):
+    #    function_response = function_message["function_call"]["arguments"]
+    #    print(function_response)
+
     response_message = completion["choices"][0]["message"]["content"]
+    # response_message = function_response
+    # print(response_message)
     lines = response_message.split("\n", 1)
     title_line = lines[0]
     rest_of_answer = lines[1]
