@@ -4,7 +4,7 @@ include mixins
 block content
   if !answer
     head
-      meta(http-equiv="refresh" content="20")
+      meta(http-equiv="refresh" content="10")
     style.
       /* Define keyframes for the animation */
       @keyframes progress-animation {
@@ -35,7 +35,7 @@ block content
     script.
       document.addEventListener("DOMContentLoaded", function () {
         var progressMeter = document.querySelector(".progress-meter");
-        progressMeter.style.animationDuration = "20s";
+        progressMeter.style.animationDuration = "10s";
         // Start the animation by adding the animated class
         progressMeter.classList.add("progress-meter-animated");
       });
@@ -66,7 +66,7 @@ block content
     .grid-x.grid-margin-x.small-12
       .grid-x.grid-margin-x(style="padding-top: 20px;")
         .cell.small-12
-          h4 Question:
+          h4 !{title}
           p.cell.lead !{question}
     if answer
       .grid-x.grid-margin-x
@@ -80,7 +80,7 @@ block content
       .grid-x.grid-margin-x
         .cell.small-12
           h5 bot-e:
-          p.cell.small-12 It can take me 20-30 seconds to compose my response - this page will refresh every 20 seconds until I have responded.
+          p.cell.small-12 It can take 10-15 seconds to respond - this page will refresh every 10 seconds until your response is ready.
         .cell.small-12
           .progress-container
             .progress-meter(role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuetext="100 percent" aria-valuemax="100")

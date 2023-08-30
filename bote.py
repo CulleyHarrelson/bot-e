@@ -1,9 +1,9 @@
 # 3408
 import psycopg2
-import requests
-
-# DictCursor returns data as dictionaries instead of tuples
+import psycopg2.extensions
 from psycopg2.extras import DictCursor
+
+import requests
 import openai
 import json
 import random
@@ -69,10 +69,46 @@ def next_moderation(cursor):
     return cursor.fetchone()
 
 
-def next_analysis(cursor):
-    # this returns an question record that is in need of analysis
-    cursor.execute("SELECT * FROM next_analysis()")
-    return cursor.fetchone()
+def answer_next(cursor):
+    # this returns an question record that is in need of moderation
+    cursor.execute(
+        """
+  SELECT *
+  FROM question
+  WHERE answer IS NULL
+  ORDER BY added_at ASC
+  LIMIT 1;
+"""
+    )
+
+    question = cursor.fetchone()
+    if question:
+        columns = [desc[0] for desc in cursor.description]
+        data = dict(zip(columns, question))
+        return data
+    else:
+        return None
+
+
+def respond():
+    conn, cursor = db_connect()
+    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+    question = answer_next(cursor)
+    cursor.execute("LISTEN new_question;")
+
+    while True:
+        if not question:
+            conn.poll()
+            while conn.notifies:
+                notify = conn.notifies.pop(0)
+                if notify.channel == "new_question":
+                    question_id = notify.payload
+                    print(f"recieved notification for new_question: {question_id}")
+                    question = answer_next(cursor)
+                    break
+        else:
+            respond_to_question(conn, cursor, question)
+            question = answer_next(cursor)
 
 
 def random_question(cursor):
@@ -268,19 +304,20 @@ def advise(question):
     return question
 
 
-def respond_to_question(conn, cursor, question):
-    user_message = question["question"]
+def respond_to_question(conn, cursor, data):
+    user_message = data["question"]
     # start_time = time.time()
     with open("data/prompt_bot-e_main.txt", "r") as file:
-        question = file.read()
+        system_prompt = file.read()
 
-    question_id = question["question_id"]
-    similar = get_similar(cursor, question_id)
+    question_id = data["question_id"]
 
-    similar_answer = similar["answer"]
-    similar_question = similar["question"]
+    # similar = get_similar(cursor, question_id)
+    # similar_answer = similar["answer"]
+    # similar_question = similar["question"]
     system_message = (
-        f"{question}\nquestion:\n{similar_question}\nanswer:\n{similar_answer}"
+        # f"{system_prompt}\nquestion:\n{similar_question}\nanswer:\n{similar_answer}"
+        f"{system_prompt}"
     )
 
     completion = openai.ChatCompletion.create(
@@ -299,16 +336,22 @@ def respond_to_question(conn, cursor, question):
     )
 
     response_message = completion["choices"][0]["message"]["content"]
+    lines = response_message.split("\n", 1)
+    title_line = lines[0]
+    rest_of_answer = lines[1]
+
+    title = title_line.split(":", 1)[1].strip()
     cursor.execute(
-        "update question set response = %s, system_prompt = %s where question_id = %s",
+        "update question set answer = %s, system_prompt = %s, title = %s where question_id = %s",
         (
-            json.dumps(response_message),
+            json.dumps(rest_of_answer),
             system_message,
-            question["question_id"],
+            title,
+            question_id,
         ),
     )
     conn.commit()
-    return get_question(question["question_id"])
+    return get_question(question_id)
 
 
 def load_random_dicts():
@@ -433,6 +476,7 @@ def export_divergent_records():
 
 
 if __name__ == "__main__":
-    conn, cursor = db_connect()
-    question = get_question("KiV4OnQED4V", return_json=False)
-    response = respond_to_question(conn, cursor, question)
+    respond()
+    # conn, cursor = db_connect()
+    # question = get_question("KiV4OnQED4V", return_json=False)
+    # response = respond_to_question(conn, cursor, question)

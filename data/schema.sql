@@ -103,3 +103,20 @@ CREATE TRIGGER check_question_id_trigger
 BEFORE INSERT ON question
 FOR EACH ROW
 EXECUTE FUNCTION check_question_id_length();
+
+
+CREATE OR REPLACE FUNCTION notify_new_question()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Issue the NOTIFY statement when a new row is inserted into the "question" table
+    PERFORM pg_notify('new_question', NEW.question_id::text);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER new_question_trigger
+AFTER INSERT ON question
+FOR EACH ROW
+EXECUTE FUNCTION notify_new_question();
+

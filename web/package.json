@@ -13,7 +13,7 @@
     "express": "~4.16.1",
     "express-validator": "^7.0.1",
     "foundation-icons": "^2.0.0",
-    "foundation-sites": "^6.7.5",
+    "foundation-sites": "^6.8.1",
     "http-errors": "~1.6.3",
     "morgan": "~1.9.1",
     "pug": "2.0.0-beta11"
