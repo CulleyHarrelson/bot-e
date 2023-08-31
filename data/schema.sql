@@ -109,7 +109,7 @@ CREATE OR REPLACE FUNCTION notify_new_question()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Issue the NOTIFY statement when a new row is inserted into the "question" table
-    PERFORM pg_notify('new_question', NEW.question_id::text);
+    NOTIFY new_question, NEW.question_id::text;
 
     RETURN NEW;
 END;

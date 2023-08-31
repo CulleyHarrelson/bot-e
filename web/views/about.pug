@@ -1,11 +1,59 @@
 extends layout
+
 include mixins
 
 block content
-  .grid-container.text-center
+  +topBar
+  .grid-container
     .grid-x.grid-margin-x.align-center 
-      h1.cell.small-12= title
-        div.cell.small-12(class="spacer")
-        p.cell.small-12.text-center .... 
-        p.cell.small-12.text-center 
-          a.button(href="/") Back
+      h1.cell.text-center= title
+      div.cell
+      h5.cell History of Advice Columns
+      p.cell
+        | Bot-e represents the evolution of the classic newspaper advice column. 
+        | With traditional newspaper advice columns, readers of the column write the newspaper a
+        | letter/email and someone from the newspaper responds. This is
+        | often the host of a column, but it might be members of the newspaper
+        | staff. Typically, readers' identities remain confidential. They might use a
+        | pseudonym or just a first name. In some columns, the columnist might
+        | assign a humorous or relevant pseudonym based on the content of the
+        | letter.  After publication, readers often have the ability to weight
+        | in, either through letters to the editor or online comments.   
+      p.cell
+        | Columnists have a responsibility to provide advice that is ethical and
+        | not harmful. Misguided advice can have real-world consequences for
+        | readers. Columnists often remind readers that while they offer
+        | guidance, they are not a substitute for professional help, especially
+        | for serious issues.
+      p.cell
+        | With the internet, many advice columns have transitioned to online
+        | platforms. Some also host podcasts or video series. While traditional
+        | advice columns covered a broad range of topics, some modern columns focus
+        | on specific niches, such as workplace dilemmas, cultural issues, or
+        | specific demographics.
+      h5.cell bot-e LLC
+      p.cell
+        | bot-e is here to build upon this model. Powered by generative AI and
+        | keen prompt engineering, bot-e increases the accessability of advice
+        | with nearly instantenous response times from fine-tuned large language
+        | models that are carefully constructed with a rigorous concern for
+        | ethics and a special focus on playfulness, fun and entertainment.
+      p.cell
+        | Culley Harrelson is the founder, product owner, prompt engineer, and
+        | system administrator for bot-e.  After selling his first start up
+        | company(flashcardexchange.com, now cram.com) Culley took the time to
+        | earn a PhD in Clinical Psychology. He is now very excited to be
+        | creating bot-e.
+      h2.cell.small-12 Backlog
+      p.cell
+        | The Bot-e website was published in the Fall of 2023. Much work remains!
+        | Here are some of our planned features:
+      blockquote
+        ul.cell
+          li phone apps for iOS and Android
+          li exanded web interface
+          li newsletter with AI curated content
+          li bot-e moderated forum for each question
+          li regular model updates for bot-e
+          li much more!
+

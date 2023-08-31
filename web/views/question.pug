@@ -2,9 +2,22 @@ extends layout
 include mixins
 
 block content
+  head
+    // meta(charset="UTF-8")
+    meta(name="description" content="Brief description of the page goes here.")
+    meta(name="viewport" content="width=device-width, initial-scale=1")
+    link(rel="canonical" href="https://example.com/page-url/")
+    meta(property="og:title" content="Title Here")
+    meta(property="og:description" content="Description Here")
+    meta(property="og:image" content="https://example.com/image.jpg")
+    meta(property="og:url" content="https://example.com/page-url/")
+    meta(name="twitter:card" content="summary")
+    meta(name="twitter:title" content="Title Here")
+    meta(name="twitter:description" content="Description Here")
+    meta(name="twitter:image" content="https://example.com/image.jpg")
+
   if !answer
-    head
-      meta(http-equiv="refresh" content="10")
+    meta(http-equiv="refresh" content="10")
     style.
       /* Define keyframes for the animation */
       @keyframes progress-animation {

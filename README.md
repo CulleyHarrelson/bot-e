@@ -38,12 +38,27 @@ mindmap
                 Advice column
 ```
 
-TODO:
+## TODO:
 
 - [reCAPTCHA](https://developers.google.com/recaptcha/docs/versions)
+- Finish About Page
+- Finish TOS
+- Build Server
+    - Flask/Gunicorn
+    - Varnish
+    - Node.js
+    - Postgresql
+        - pgVector
+        - backups
+    - bot-e Daemon
+    - email server
+- Transfer domain
+- Add LLC stuff
+- Newsletter signup 
 
 
-FreeBSD services:
+
+## FreeBSD services:
 
 - Email Server
 - Postgresql
@@ -51,3 +66,11 @@ FreeBSD services:
 - Flask/Gunicorn API
 - Node.js Server
 - Varnish Cache
+
+## Postgresql setup
+
+- install Postgresql
+- install pgVector
+- execute data/schema.sql
+- execute data/functions.sql
+

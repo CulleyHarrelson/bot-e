@@ -1,7 +1,10 @@
 extends layout
-include mixins
 
 block content
+  head
+    script(async src="https://www.google.com/recaptcha/api.js")
+    link(rel="preconnect" href="https://www.google.com")
+    link(rel="preconnect" href="https://www.gstatic.com" crossorigin)
   +topBar
   .grid-container.text-center
     .grid-x.grid-margin-x.align-center 

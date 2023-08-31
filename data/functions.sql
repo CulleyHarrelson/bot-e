@@ -1,19 +1,94 @@
--- This is the data api
+
+CREATE OR REPLACE FUNCTION get_similar(aid TEXT) RETURNS TABLE(question TEXT, answer TEXT) AS $$
+DECLARE
+    question_embedding vector(1536);
+    similarity_threshold FLOAT := 0.9; -- Adjust the threshold as needed
+BEGIN
+    -- Fetch the question's embedding
+    SELECT embedding INTO question_embedding FROM question WHERE question_id = aid;
+
+    -- Ensure the question's embedding is not null
+    IF question_embedding IS NULL THEN
+        RAISE EXCEPTION 'Embedding for the given question_id is NULL';
+    END IF;
+
+    -- Find similar training_data entries using pgvector's knn cosine similarity
+    RETURN QUERY
+    SELECT T.question, T.answer
+    FROM training_data AS T
+    WHERE T.question_embedding <-> question_embedding < similarity_threshold
+    ORDER BY T.question_embedding <-> question_embedding
+    LIMIT 1;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION search(search_term TEXT, limit_rows INT DEFAULT 10)
+RETURNS SETOF question AS $$
+BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM question
+    WHERE search_vector @@ plainto_tsquery(search_term)
+    LIMIT limit_rows;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION new_question(prompt_value TEXT)
+RETURNS question AS $$
+DECLARE
+    inserted_question question;
+BEGIN
+     IF LENGTH(TRIM(prompt_value)) = 0 THEN
+        RAISE EXCEPTION 'question.question cannot be a zero-length string';
+    END IF;
+    -- Insert the record into the 'question' table
+    INSERT INTO question (question) VALUES (prompt_value) RETURNING * INTO inserted_question;
+
+    RETURN inserted_question;
+END;
+$$ LANGUAGE plpgsql;
+
+-- return similar questions 
+CREATE OR REPLACE FUNCTION similar(question_id_in TEXT, row_limit INT DEFAULT 10)
+RETURNS SETOF question
+AS $$
+DECLARE
+    target_embedding vector(1536);
+BEGIN
+    -- Get the target embedding for the given question_id
+    SELECT embedding INTO target_embedding
+    FROM question
+    WHERE question_id = question_id_in;
+
+    IF target_embedding IS NULL THEN
+        RAISE EXCEPTION 'No record found for the given question_id';
+    END IF;
+
+    -- Perform the proximity search using pg_similarity extension
+    RETURN QUERY
+    SELECT a.*
+    FROM question a
+    WHERE a.question_id <> question_id_in  -- Exclude the same question_id
+    ORDER BY a.embedding <-> target_embedding  -- Order by proximity to the target embedding
+    LIMIT row_limit;  -- Limit the results to the specified row limit
+END;
+$$ LANGUAGE plpgsql;
+
 
 CREATE OR REPLACE FUNCTION next_question()
 RETURNS SETOF question AS
 $$
-DECLARE
-  next_question_id TEXT;
 BEGIN
-  SELECT question_id INTO next_question_id 
-  FROM question
-  WHERE answer IS NULL
-  ORDER BY added_at ASC
+  RETURN QUERY 
+  SELECT * 
+  FROM question 
+  WHERE answer IS NULL 
+  ORDER BY added_at ASC 
   LIMIT 1;
-
-  -- Return the corresponding row from 'question' where 'question_id' matches 'next_question_id'
-  RETURN QUERY SELECT * FROM question WHERE question_id = next_question_id;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -45,7 +120,7 @@ BEGIN
         ORDER BY embedding <-> (SELECT embedding FROM question WHERE question_id = ANY(exclude_ids))
         LIMIT 1
     )
-    UNION
+    UNION ALL
     SELECT *
     FROM question
     WHERE question_id = (
@@ -62,17 +137,13 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION next_embedding()
 RETURNS SETOF question AS
 $$
-DECLARE
-  next_question_id TEXT;
 BEGIN
-  SELECT question_id INTO next_question_id 
-  FROM question
-  WHERE embedding IS NULL
-  ORDER BY added_at
+  RETURN QUERY 
+  SELECT * 
+  FROM question 
+  WHERE embedding IS NULL 
+  ORDER BY added_at 
   LIMIT 1;
-
-  -- Return the corresponding row from 'question' where 'question_id' matches 'next_question_id'
-  RETURN QUERY SELECT * FROM question WHERE question_id = next_question_id;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -81,32 +152,13 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION next_moderation()
 RETURNS SETOF question AS
 $$
-DECLARE
-  next_question_id TEXT;
 BEGIN
-  SELECT question_id INTO next_question_id 
-  FROM question
-  WHERE moderation IS NULL
-  ORDER BY added_at
+  RETURN QUERY 
+  SELECT * 
+  FROM question 
+  WHERE moderation IS NULL 
+  ORDER BY added_at 
   LIMIT 1;
-
-  -- Return the corresponding row from 'question' where 'question_id' matches 'next_question_id'
-  RETURN QUERY SELECT * FROM question WHERE question_id = next_question_id;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION new_question(prompt_value TEXT)
-RETURNS question AS $$
-DECLARE
-    inserted_question question;
-BEGIN
-     IF LENGTH(TRIM(prompt_value)) = 0 THEN
-        RAISE EXCEPTION 'question.question cannot be a zero-length string';
-    END IF;
-    -- Insert the record into the 'question' table
-    INSERT INTO question (question) VALUES (prompt_value) RETURNING * INTO inserted_question;
-
-    RETURN inserted_question;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -115,85 +167,13 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION next_analysis()
 RETURNS SETOF question AS
 $$
-DECLARE
-  next_question_id TEXT;
 BEGIN
-  SELECT question_id INTO next_question_id 
-  FROM question
-  WHERE analysis IS NULL
-  ORDER BY added_at
+  RETURN QUERY 
+  SELECT * 
+  FROM question 
+  WHERE analysis IS NULL 
+  ORDER BY added_at 
   LIMIT 1;
-
-  -- Return the corresponding row from 'question' where 'question_id' matches 'next_question_id'
-  RETURN QUERY SELECT * FROM question WHERE question_id = next_question_id;
-END;
-$$ LANGUAGE plpgsql;
-
- --select question_id from find_similar('Y7HXnornSAh')
-
--- return similar questions 
-CREATE OR REPLACE FUNCTION similar(question_id_in TEXT, row_limit INT DEFAULT 10)
-RETURNS SETOF question
-AS $$
-DECLARE
-    target_embedding vector(1536);
-BEGIN
-    -- Get the target embedding for the given question_id
-    SELECT embedding INTO target_embedding
-    FROM question
-    WHERE question_id = question_id_in;
-
-    IF target_embedding IS NULL THEN
-        RAISE EXCEPTION 'No record found for the given question_id';
-    END IF;
-
-    -- Perform the proximity search using pg_similarity extension
-    RETURN QUERY
-    SELECT a.*
-    FROM question a
-    WHERE a.question_id <> question_id_in  -- Exclude the same question_id
-    ORDER BY a.embedding <-> target_embedding  -- Order by proximity to the target embedding
-    LIMIT row_limit;  -- Limit the results to the specified row limit
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION search(search_term TEXT, limit_rows INT DEFAULT 10)
-RETURNS SETOF question AS $$
-BEGIN
-    RETURN QUERY
-    SELECT *
-    FROM question
-    WHERE search_vector @@ plainto_tsquery(search_term)
-    LIMIT limit_rows;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION get_similar(aid TEXT) RETURNS TABLE(question TEXT, answer TEXT) AS $$
-DECLARE
-    question_embedding vector(1536);
-    similarity_threshold FLOAT := 0.9; -- Adjust the threshold as needed
-BEGIN
-    -- Fetch the question's embedding
-    SELECT embedding INTO question_embedding FROM question WHERE question_id = aid;
-
-    -- Ensure the question's embedding is not null
-    IF question_embedding IS NULL THEN
-        RAISE EXCEPTION 'Embedding for the given question_id is NULL';
-    END IF;
-
-    -- Find similar training_data entries using pgvector's knn cosine similarity
-    RETURN QUERY
-    SELECT T.question, T.answer
-    FROM training_data AS T
-    WHERE T.question_embedding <-> question_embedding < similarity_threshold
-    ORDER BY T.question_embedding <-> question_embedding
-    LIMIT 1;
-
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        RETURN;
 END;
 $$ LANGUAGE plpgsql;
 

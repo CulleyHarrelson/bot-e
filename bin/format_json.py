@@ -7,11 +7,7 @@ def format_json(file_path):
     with open(file_path, "r") as file:
         data = json.load(file)
 
-    # Write the formatted JSON back to the file
-    with open(file_path, "w") as file:
-        json.dump(data, file, indent=4, sort_keys=True)
-
-    print(f"Formatted JSON written back to {file_path}")
+    print(data)
 
 
 if __name__ == "__main__":
