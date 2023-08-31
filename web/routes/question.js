@@ -16,13 +16,13 @@ router.get('/:question_id', function(req, res, next) {
       } catch (error) {
         title = 'Question:'
       }
+      image_url = questionDetails['image_url']
 
       try {
         question = JSON.parse(questionDetails['question']);
         question = question.replace(/\n/g, '<p class="lead">');
       } catch (error) {
         question = questionDetails['question'];
-        question = question.replace(/\n/g, '<p class="lead">');
       }
       try {
         answer = JSON.parse(questionDetails['answer']);

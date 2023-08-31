@@ -55,6 +55,10 @@ mindmap
 - Transfer domain
 - Add LLC stuff
 - Newsletter signup 
+- post processing
+    - summary
+    - media
+    - image
 
 
 

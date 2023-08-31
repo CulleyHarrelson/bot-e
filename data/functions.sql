@@ -1,28 +1,27 @@
 
-CREATE OR REPLACE FUNCTION get_similar(aid TEXT) RETURNS TABLE(question TEXT, answer TEXT) AS $$
+-- return similar questions 
+CREATE OR REPLACE FUNCTION similar(question_id_in TEXT, row_limit INT DEFAULT 10)
+RETURNS SETOF question
+AS $$
 DECLARE
-    question_embedding vector(1536);
-    similarity_threshold FLOAT := 0.9; -- Adjust the threshold as needed
+    target_embedding vector(1536);
 BEGIN
-    -- Fetch the question's embedding
-    SELECT embedding INTO question_embedding FROM question WHERE question_id = aid;
+    -- Get the target embedding for the given question_id
+    SELECT embedding INTO target_embedding
+    FROM question
+    WHERE question_id = question_id_in;
 
-    -- Ensure the question's embedding is not null
-    IF question_embedding IS NULL THEN
-        RAISE EXCEPTION 'Embedding for the given question_id is NULL';
+    IF target_embedding IS NULL THEN
+        RAISE EXCEPTION 'No record found for the given question_id';
     END IF;
 
-    -- Find similar training_data entries using pgvector's knn cosine similarity
+    -- Perform the proximity search using pg_similarity extension
     RETURN QUERY
-    SELECT T.question, T.answer
-    FROM training_data AS T
-    WHERE T.question_embedding <-> question_embedding < similarity_threshold
-    ORDER BY T.question_embedding <-> question_embedding
-    LIMIT 1;
-
-EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        RETURN;
+    SELECT a.*
+    FROM question a
+    WHERE a.question_id <> question_id_in  -- Exclude the same question_id
+    ORDER BY a.embedding <-> target_embedding  -- Order by proximity to the target embedding
+    LIMIT row_limit;  -- Limit the results to the specified row limit
 END;
 $$ LANGUAGE plpgsql;
 
@@ -52,45 +51,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- return similar questions 
-CREATE OR REPLACE FUNCTION similar(question_id_in TEXT, row_limit INT DEFAULT 10)
-RETURNS SETOF question
-AS $$
-DECLARE
-    target_embedding vector(1536);
-BEGIN
-    -- Get the target embedding for the given question_id
-    SELECT embedding INTO target_embedding
-    FROM question
-    WHERE question_id = question_id_in;
-
-    IF target_embedding IS NULL THEN
-        RAISE EXCEPTION 'No record found for the given question_id';
-    END IF;
-
-    -- Perform the proximity search using pg_similarity extension
-    RETURN QUERY
-    SELECT a.*
-    FROM question a
-    WHERE a.question_id <> question_id_in  -- Exclude the same question_id
-    ORDER BY a.embedding <-> target_embedding  -- Order by proximity to the target embedding
-    LIMIT row_limit;  -- Limit the results to the specified row limit
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE OR REPLACE FUNCTION next_question()
-RETURNS SETOF question AS
-$$
-BEGIN
-  RETURN QUERY 
-  SELECT * 
-  FROM question 
-  WHERE answer IS NULL 
-  ORDER BY added_at ASC 
-  LIMIT 1;
-END;
-$$ LANGUAGE plpgsql;
 
 /*
 get_proximal_question() notes:
@@ -129,58 +89,6 @@ BEGIN
         ORDER BY embedding <-> (SELECT embedding FROM question WHERE question_id = ANY(include_ids))
         LIMIT 1
     );
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to get the next question that does not have a embedding value.
--- this works as a queue for the embeddings api
-CREATE OR REPLACE FUNCTION next_embedding()
-RETURNS SETOF question AS
-$$
-BEGIN
-  RETURN QUERY 
-  SELECT * 
-  FROM question 
-  WHERE embedding IS NULL 
-  ORDER BY added_at 
-  LIMIT 1;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to get the next question that does not have a moderation value.
--- this works as a queue for the moderation api
-CREATE OR REPLACE FUNCTION next_moderation()
-RETURNS SETOF question AS
-$$
-BEGIN
-  RETURN QUERY 
-  SELECT * 
-  FROM question 
-  WHERE moderation IS NULL 
-  ORDER BY added_at 
-  LIMIT 1;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to get the next question that does not have an analysis value.
--- this works as a queue for the conversation api to get the analysis dictionary
-CREATE OR REPLACE FUNCTION next_analysis()
-RETURNS SETOF question AS
-$$
-BEGIN
-  RETURN QUERY 
-  SELECT * 
-  FROM question 
-  WHERE analysis IS NULL 
-  ORDER BY added_at 
-  LIMIT 1;
-END;
-$$ LANGUAGE plpgsql;
-
--- returns bot-e version to tag each question row
-CREATE OR REPLACE FUNCTION getVersion() RETURNS text AS $$
-BEGIN
-    RETURN '0.1';
 END;
 $$ LANGUAGE plpgsql;
 

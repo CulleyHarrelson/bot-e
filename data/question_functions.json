@@ -1,0 +1,46 @@
+[
+    {
+        "description": "function to extract data from the conversation",
+        "name": "extract_data",
+        "parameters": {
+            "required": ["description", "title", "media"],
+            "properties": {
+                "description": {
+                    "description": "Create an entertaining 2-4 sentence summary of the conversation that would be shown in search results.",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Create an entertaining short title for the user's question.",
+                    "type": "string"
+                },
+                "media": {
+                    "description": "Include five or more self-help books, movies, video games, TV shows, novels, songs that speak to this exchange. If the assistant references media, expand on that media here.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "author": {
+                                "description": "Name of the author of the media",
+                                "type": "string"
+                            },
+                            "title": {
+                                "description": "Title of the media",
+                                "type": "string"
+                            },
+                            "correlation": {
+                                "description": "How this media relates to the user-assistant data.",
+                                "type": "string"
+                            },
+                            "media_type": {
+                                "description": "Type of the media (e.g., book, movie, song, podcast, show, video)",
+                                "type": "string"
+                            }
+                        },
+                        "required": ["author", "title", "media_type"]
+                    }
+                }
+            },
+            "type": "object"
+        }
+    }
+]

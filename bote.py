@@ -47,7 +47,9 @@ def new_question(conn, cursor, question):
     if len(question) < 1:
         return {}
     # insert a new question record and get back the question_id
-    cursor.execute("SELECT * FROM new_question(%s)", (question,))
+    cursor.execute(
+        "INSERT INTO question (question) VALUES (%s) RETURNING *", (question,)
+    )
     conn.commit()
     result_tuple = cursor.fetchone()
 
@@ -59,26 +61,24 @@ def new_question(conn, cursor, question):
 
 def next_embedding(cursor):
     # this returns an question record that is in need of embedding
-    cursor.execute("SELECT * FROM next_embedding()")
+    cursor.execute(
+        "SELECT * FROM question WHERE embedding IS NULL ORDER BY added_at LIMIT 1;"
+    )
     return cursor.fetchone()
 
 
 def next_moderation(cursor):
     # this returns an question record that is in need of moderation
-    cursor.execute("SELECT * FROM next_moderation()")
+    cursor.execute(
+        "SELECT * FROM question WHERE moderation IS NULL ORDER BY added_at LIMIT 1;"
+    )
     return cursor.fetchone()
 
 
 def answer_next(cursor):
     # this returns an question record that is in need of moderation
     cursor.execute(
-        """
-  SELECT *
-  FROM question
-  WHERE answer IS NULL
-  ORDER BY added_at ASC
-  LIMIT 1;
-"""
+        "SELECT * FROM question WHERE answer IS NULL ORDER BY added_at ASC LIMIT 1;"
     )
 
     question = cursor.fetchone()
@@ -102,8 +102,7 @@ def respond():
             while conn.notifies:
                 notify = conn.notifies.pop(0)
                 if notify.channel == "new_question":
-                    question_id = notify.payload
-                    print(f"recieved notification for new_question: {question_id}")
+                    # question_id = notify.payload
                     question = answer_next(cursor)
                     break
         else:
@@ -114,13 +113,6 @@ def respond():
 def random_question(cursor):
     # this returns an question record that is in need of analysis
     cursor.execute("SELECT * FROM question order by RANDOM() limit 1")
-    return cursor.fetchone()
-
-
-def get_similar(cursor, question_id):
-    # insert a new question record and get back the question_id
-
-    cursor.execute("select question, answer from get_similar(%s)", (question_id,))
     return cursor.fetchone()
 
 
@@ -313,27 +305,36 @@ def respond_to_question(conn, cursor, data):
 
     system_message = f"{system_prompt}"
 
+    messages = [
+        {
+            "role": "system",
+            "content": f"{system_message}",
+        },
+        {
+            "role": "user",
+            "content": f"{user_message}",
+        },
+    ]
     completion = openai.ChatCompletion.create(
         # model="gpt-4",
         model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": f"{system_message}",
-            },
-            {
-                "role": "user",
-                "content": f"{user_message}",
-            },
-        ],
+        messages=messages,
     )
+
+    messages.append(completion["choices"][0]["message"])
 
     response_message = completion["choices"][0]["message"]["content"]
     lines = response_message.split("\n", 1)
     title_line = lines[0]
     rest_of_answer = lines[1]
 
-    title = title_line.split(":", 1)[1].strip()
+    # if this fails, the model did not return a title
+    try:
+        title = title_line.split(":", 1)[1].strip()
+    except IndexError:
+        title = ""
+        rest_of_answer = response_message
+
     cursor.execute(
         "update question set answer = %s, system_prompt = %s, title = %s where question_id = %s",
         (
@@ -344,6 +345,48 @@ def respond_to_question(conn, cursor, data):
         ),
     )
     conn.commit()
+    with open("data/question_functions.json", "r") as file:
+        functions = json.load(file)
+
+    function_completion = openai.ChatCompletion.create(
+        # model="gpt-4",
+        model="gpt-3.5-turbo",
+        messages=messages,
+        functions=functions,
+        function_call={"name": "extract_data"},
+    )
+    function_message = function_completion["choices"][0]["message"]
+
+    if function_message.get("function_call"):
+        function_response = json.loads(function_message["function_call"]["arguments"])
+        description = function_response["description"]
+        media = function_response["media"]
+        if len(title) == 0:
+            # if there was a previous title failure....
+            title = function_response["title"]
+
+        try:
+            response = openai.Image.create(
+                prompt=f"generate abstract graphic style of: {title}",
+                n=1,
+                size="256x256",
+            )
+            image_url = response["data"][0]["url"]
+        except openai.error.InvalidRequestError as e:
+            image_url = ""
+
+        cursor.execute(
+            "update question set title = %s, description = %s, image_url = %s, media = %s where question_id = %s",
+            (
+                title,
+                description,
+                image_url,
+                json.dumps(media),
+                question_id,
+            ),
+        )
+        conn.commit()
+
     return get_question(question_id)
 
 

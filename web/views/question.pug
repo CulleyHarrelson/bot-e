@@ -1,11 +1,8 @@
 extends layout
-include mixins
 
 block content
   head
-    // meta(charset="UTF-8")
     meta(name="description" content="Brief description of the page goes here.")
-    meta(name="viewport" content="width=device-width, initial-scale=1")
     link(rel="canonical" href="https://example.com/page-url/")
     meta(property="og:title" content="Title Here")
     meta(property="og:description" content="Description Here")
@@ -53,6 +50,8 @@ block content
         progressMeter.classList.add("progress-meter-animated");
       });
   else
+    if !image_url
+      meta(http-equiv="refresh" content="30")
     script(src='https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js')
     script.
       document.addEventListener('DOMContentLoaded', () => {
@@ -80,13 +79,15 @@ block content
       .grid-x.grid-margin-x(style="padding-top: 20px;")
         .cell.small-12
           h4 !{title}
-          p.cell.lead !{question}
+        .cell.small-12
+          if image_url
+            img(src=image_url alt=title style="float: left; margin-right: 20px;")
+          p.lead !{question}
     if answer
       .grid-x.grid-margin-x
         .cell.small-12
           h4 bot-e:
           p.cell.small-12 !{answer}
-
           .cell.small-12.text-center(style="padding-top: 20px;")
             button.button(type='button', id='copy-button') Share
     else
