@@ -2,16 +2,16 @@ extends layout
 
 block content
   head
-    meta(name="description" content="Brief description of the page goes here.")
-    link(rel="canonical" href="https://example.com/page-url/")
-    meta(property="og:title" content="Title Here")
-    meta(property="og:description" content="Description Here")
-    meta(property="og:image" content="https://example.com/image.jpg")
-    meta(property="og:url" content="https://example.com/page-url/")
-    meta(name="twitter:card" content="summary")
-    meta(name="twitter:title" content="Title Here")
-    meta(name="twitter:description" content="Description Here")
-    meta(name="twitter:image" content="https://example.com/image.jpg")
+    meta(name="description" content=description)
+    link(rel="canonical" href=`https://bot-e.com/question/${question_id}`)
+    meta(property="og:title" content=title)
+    meta(property="og:description" content=description)
+    meta(property="og:image" content=image_url)
+    meta(property="og:url" content=`https://bot-e.com/question/${question_id}`)
+    meta(name="twitter:card" content=description)
+    meta(name="twitter:title" content=title)
+    meta(name="twitter:description" content=description)
+    meta(name="twitter:image" content=image_url)
 
   if !answer
     meta(http-equiv="refresh" content="10")
@@ -51,7 +51,7 @@ block content
       });
   else
     if !image_url
-      meta(http-equiv="refresh" content="30")
+      meta(http-equiv="refresh" content="20")
     script(src='https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js')
     script.
       document.addEventListener('DOMContentLoaded', () => {
@@ -73,31 +73,44 @@ block content
         });
       });
   +topBar
-
-  .grid-container
-    .grid-x.grid-margin-x.small-12
-      .grid-x.grid-margin-x(style="padding-top: 20px;")
-        .cell.small-12
+  .flex-container.align-center.margin-3
+    .small-up-1.medium-up-2
+      .card
+        .card-section
           h4 !{title}
-        .cell.small-12
           if image_url
-            img(src=image_url alt=title style="float: left; margin-right: 20px;")
-          p.lead !{question}
-    if answer
-      .grid-x.grid-margin-x
-        .cell.small-12
-          h4 bot-e:
-          p.cell.small-12 !{answer}
-          .cell.small-12.text-center(style="padding-top: 20px;")
-            button.button(type='button', id='copy-button') Share
-    else
-      .grid-x.grid-margin-x
-        .cell.small-12
-          h5 bot-e:
-          p.cell.small-12 It can take 10-15 seconds to respond - this page will refresh every 10 seconds until your response is ready.
-        .cell.small-12
-          .progress-container
-            .progress-meter(role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuetext="100 percent" aria-valuemax="100")
-              span.progress-meter-text
-        .cell.small-12.text-center(style="padding-top: 20px;")
-          button.button(type='button', onclick='location.reload();') I'm tired of waiting, refresh now!
+            img(src=image_url width=256 height=256 alt=title)
+      .card
+        .card-divider
+          | Question
+        .card-section
+          p !{question}
+        if media
+          .card
+            .card-divider
+              | Media Recommendations
+            .card-section
+              each item in media
+                p
+                  a(href=`https://www.amazon.com/gp/search?ie=UTF8&tag=bote04-20&linkCode=ur2&linkId=cb41c8c087e0d9fb866de1f283c3a56c&camp=1789&creative=9325&index=books&keywords=${item.title} by ${item.author}`) #{item.title} by #{item.author}
+                  |  (#{item.media_type}) - #{item.correlation} 
+        if answer
+          .card
+            .card-divider
+              | Answer
+            .card-section
+              h4 bot-e
+              p !{answer}
+        else
+          .card
+            .card-divider
+              | Answer
+            .card-section
+              p.cell.small-12 It can take 10-15 seconds to respond - this page will refresh every 10 seconds until your response is ready.
+              .cell.small-12
+                .progress-container
+                  .progress-meter(role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuetext="100 percent" aria-valuemax="100")
+                    span.progress-meter-text
+              .cell.small-12.text-center(style="padding-top: 20px;")
+                button.button(type='button', onclick='location.reload();') I'm tired of waiting, refresh now!
+  

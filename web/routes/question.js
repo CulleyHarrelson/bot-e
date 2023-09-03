@@ -9,6 +9,8 @@ router.get('/:question_id', function(req, res, next) {
   axios.get(`http://localhost:6464/question/${questionId}`)
     .then(response => {
       const questionDetails = response.data; // Assuming the response contains the question details
+      description = questionDetails['description']
+      question_id = questionDetails['question_id']
 
       try {
         title = questionDetails['title']
@@ -17,12 +19,18 @@ router.get('/:question_id', function(req, res, next) {
         title = 'Question:'
       }
       image_url = questionDetails['image_url']
+      media = questionDetails['media']
 
       try {
         question = JSON.parse(questionDetails['question']);
-        question = question.replace(/\n/g, '<p class="lead">');
+        question = question.replace(/\n/g, '<p>');
       } catch (error) {
         question = questionDetails['question'];
+        try {
+          question = question.replace(/\n/g, '<p>');
+        } catch (error) {
+          pass
+        }
       }
       try {
         answer = JSON.parse(questionDetails['answer']);
