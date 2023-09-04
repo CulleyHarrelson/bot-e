@@ -10,17 +10,17 @@
                     "type": "string"
                 },
                 "title": {
-                    "description": "Create an entertaining short title for the user's question.",
+                    "description": "Create an entertaining short title for the user's questionx",
                     "type": "string"
                 },
                 "media": {
-                    "description": "Include five or more self-help books, movies, video games, TV shows, novels, songs that speak to this exchange. If the assistant references media, expand on that media here.",
+                    "description": "Fill the array with a variety of self-help books, non-fiction books, movies, TV shows, novels, songs that speak to this exchange. Include all media in the conversation.  Include at least one popular song.",
                     "type": "array",
                     "items": {
                         "type": "object",
                         "properties": {
                             "author": {
-                                "description": "Name of the author of the media",
+                                "description": "Name of the author/director/songwriter of the media",
                                 "type": "string"
                             },
                             "title": {
@@ -32,11 +32,11 @@
                                 "type": "string"
                             },
                             "media_type": {
-                                "description": "Type of the media (e.g., book, movie, song, podcast, show, video)",
+                                "description": "Type of the media (e.g., book, movie, song, show)",
                                 "type": "string"
                             }
                         },
-                        "required": ["author", "title", "media_type"]
+                        "required": ["author", "title", "correlation", "media_type"]
                     }
                 }
             },

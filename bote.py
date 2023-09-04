@@ -8,12 +8,51 @@ import openai
 import json
 import random
 from datetime import datetime
+import os
+
+import io
+import warnings
+from PIL import Image
+from stability_sdk import client
+import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
+import googleapiclient.discovery
+from googleapiclient.errors import HttpError
+
+os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
 
 from config import OPENAI_API_KEY, POSTGRESQL_KEY
 
 
 openai.api_key = OPENAI_API_KEY
 pg_password = POSTGRESQL_KEY
+
+
+def search_youtube_videos(search_phrase):
+    youtube = googleapiclient.discovery.build(
+        "youtube", "v3", developerKey=os.environ["YOUTUBE_DATA_API_KEY"]
+    )
+    try:
+        # Perform the YouTube search
+        request = youtube.search().list(
+            q=search_phrase, type="video", part="id,snippet", maxResults=1
+        )
+
+        response = request.execute()
+
+        # Construct the list of dictionaries
+        results = []
+        for item in response.get("items", []):
+            result = {
+                "videoId": item["id"]["videoId"],
+                "thumbnailUrl": item["snippet"]["thumbnails"]["default"]["url"],
+                "title": item["snippet"]["title"],
+            }
+            results.append(result)
+
+        return results
+    except HttpError as e:
+        print(f"An HTTP error occurred: {e}")
+        return []
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -110,12 +149,6 @@ def respond():
             question = answer_next(cursor)
 
 
-def random_question(cursor):
-    # this returns an question record that is in need of analysis
-    cursor.execute("SELECT * FROM question order by RANDOM() limit 1")
-    return cursor.fetchone()
-
-
 def post_question(question):
     conn, cursor = db_connect()
     question = new_question(conn, cursor, question)
@@ -205,28 +238,54 @@ def get_question(question_id, return_json=True):
         return data
 
 
-def similar(question_id):
+def random_question():
+    conn, cursor = db_connect()
+
+    cursor.execute(
+        "SELECT * FROM question ORDER BY RANDOM() LIMIT 1",
+    )
+    question = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not question:
+        return json.dumps([])
+
+    columns = [desc[0] for desc in cursor.description]
+    data = dict(zip(columns, question))
+
+    return data
+
+
+def next_question(question_id, session_id, direction):
     conn, cursor = db_connect()
 
     # Filter out invalid question_ids
     if not validate_key(question_id):
         return "[]"
 
-    cursor.execute(
-        "select * from similar(%s)",
-        (question_id,),
-    )
-    questions = cursor.fetchall()
-    # Convert the rows to a list of dictionaries
-    columns = [desc[0] for desc in cursor.description]
-    data = [dict(zip(columns, row)) for row in questions]
+    if direction == "down":
+        similarity = False
+    else:
+        similarity = True
 
+    cursor.execute(
+        "select * from proximal_question(%s, %s, %s)",
+        (question_id, session_id, similarity),
+    )
+
+    question = cursor.fetchone()
+    conn.commit()
     cursor.close()
     conn.close()
 
-    # Convert the list of dictionaries to JSON
-    json_response = json.dumps(data, default=custom_json_serializer)
-    return json_response
+    if not question:
+        return json.dumps([])
+
+    columns = [desc[0] for desc in cursor.description]
+    data = dict(zip(columns, question))
+
+    return data
 
 
 def moderate_questions():
@@ -361,20 +420,22 @@ def respond_to_question(conn, cursor, data):
         function_response = json.loads(function_message["function_call"]["arguments"])
         description = function_response["description"]
         media = function_response["media"]
+        if len(media) > 0:
+            for record in media:
+                videos = search_youtube_videos(record["title"])
+                for video in videos:
+                    record["videoId"] = video["videoId"]
+                    record["thumbnailUrl"] = video["thumbnailUrl"]
+                    record["videoTitle"] = video["title"]
+
         if len(title) == 0:
             # if there was a previous title failure....
             title = function_response["title"]
 
         try:
-            response = openai.Image.create(
-                prompt=f"generate abstract graphic style of: {title}",
-                n=1,
-                size="256x256",
-            )
-            image_url = response["data"][0]["url"]
-        except openai.error.InvalidRequestError as e:
-            image_url = ""
-
+            image_url = stability_image(title, question_id)
+        except Exception as e:
+            image_url = openai_image(title, question_id)
         cursor.execute(
             "update question set title = %s, description = %s, image_url = %s, media = %s where question_id = %s",
             (
@@ -388,6 +449,71 @@ def respond_to_question(conn, cursor, data):
         conn.commit()
 
     return get_question(question_id)
+
+
+def openai_image(title, question_id):
+    try:
+        response = openai.Image.create(
+            prompt=f"Generate an abstract image representing: {title}",
+            n=1,
+            size="256x256",
+        )
+        image_url = response["data"][0]["url"]
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        images_dir = os.path.join(base_dir, "images")
+        questions_dir = os.path.join(images_dir, "questions")
+        folder_character = question_id[0].lower()
+        question_subfolder = os.path.join(questions_dir, folder_character)
+        os.makedirs(question_subfolder, exist_ok=True)
+        image_data = requests.get(image_url).content
+        image_filename = os.path.join(question_subfolder, f"{question_id}.png")
+        with open(image_filename, "wb") as image_file:
+            image_file.write(image_data)
+        return f"/images/questions/{folder_character}/{question_id}.png"
+    except openai.error.InvalidRequestError:
+        image_url = ""
+    return image_url
+
+
+def stability_image(title, question_id):
+    stability_api = client.StabilityInference(
+        key=os.environ["STABILITY_KEY"],
+        verbose=True,  # Print debug messages.
+        engine="stable-diffusion-xl-1024-v1-0",
+    )
+
+    answers = stability_api.generate(
+        prompt=f"using mostly dark tones create an image that will make people curious about this title: '{title}'. ",
+        seed=4253978046,
+        steps=30,
+        cfg_scale=7.0,
+        width=512,
+        height=512,
+        samples=1,
+        sampler=generation.SAMPLER_K_DPMPP_2M,
+    )
+
+    for resp in answers:
+        for artifact in resp.artifacts:
+            if artifact.finish_reason == generation.FILTER:
+                warnings.warn(
+                    "Your request activated the API's safety filters and could not be processed."
+                    "Please modify the prompt and try again."
+                )
+            if artifact.type == generation.ARTIFACT_IMAGE:
+                img = Image.open(io.BytesIO(artifact.binary))
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                images_dir = os.path.join(base_dir, "images")
+                questions_dir = os.path.join(images_dir, "questions")
+                folder_character = question_id[0].lower()
+                question_subfolder = os.path.join(questions_dir, folder_character)
+                os.makedirs(question_subfolder, exist_ok=True)
+                image_filename = os.path.join(question_subfolder, f"{question_id}.png")
+
+                img.save(image_filename)
+                return f"/images/questions/{folder_character}/{question_id}.png"
+
+    return ""
 
 
 def load_random_dicts():
@@ -513,6 +639,7 @@ def export_divergent_records():
 
 if __name__ == "__main__":
     respond()
+    # embed_questions()
     # conn, cursor = db_connect()
     # question = get_question("KiV4OnQED4V", return_json=False)
     # response = respond_to_question(conn, cursor, question)

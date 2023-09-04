@@ -1,10 +1,8 @@
--- Check if the 'vector' extension exists, and create it if not
 CREATE EXTENSION IF NOT EXISTS vector;
--- CREATE EXTENSION IF NOT EXISTS aws_lambda CASCADE;
---CREATE EXTENSION pg_cron;
 
 
 -- Function to generate a unique key for the 'question_id' column in 'question' table
+-- Inspired by youtube video id
 CREATE OR REPLACE FUNCTION generateKey()
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -53,7 +51,8 @@ CREATE TABLE question (
     title TEXT NULL, 
     description TEXT NULL, 
     added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the record is added
-    -- hashtags TEXT[] NULL, -- Array of hashtags (nullable)
+    modified_at TIMESTAMP WITH TIME ZONE,
+    hashtags TEXT[] NULL, -- Array of hashtags (nullable)
     embedding vector(1536) NULL, -- embedding data 
     moderation JSONB NULL, 
     media JSONB NULL, -- list of related books, movies etc
@@ -63,11 +62,10 @@ CREATE TABLE question (
 );
 
 -- CREATE INDEX idx_question_moderation ON question USING gin(moderation);
--- CREATE INDEX idx_question_hashtags ON question USING gin (hashtags);
-CREATE INDEX idx_search_vector ON question USING gin(search_vector);
+CREATE INDEX idx_question_hashtags ON question USING gin (hashtags);
+CREATE INDEX idx_question_search_vector ON question USING gin(search_vector);
 --CREATE INDEX idx_question_embedding ON question USING gin(embedding);
 
--- Create an index on question.added_at
 CREATE INDEX idx_question_added_at ON question (added_at);
 
 CREATE OR REPLACE FUNCTION update_search_vector()
@@ -76,7 +74,7 @@ BEGIN
     NEW.search_vector := 
         setweight(to_tsvector(coalesce(NEW.title, '')), 'A') ||
         setweight(to_tsvector(coalesce(NEW.question, '')), 'B') ||
-        -- setweight(to_tsvector(coalesce(array_to_string(NEW.hashtags, ' '), '')), 'C') ||
+        setweight(to_tsvector(coalesce(array_to_string(NEW.hashtags, ' '), '')), 'C') ||
         setweight(to_tsvector(coalesce(NEW.answer, '')), 'D');
     RETURN NEW;
 END;
@@ -119,4 +117,19 @@ CREATE TRIGGER new_question_trigger
 AFTER INSERT ON question
 FOR EACH ROW
 EXECUTE FUNCTION notify_new_question();
+
+CREATE TRIGGER update_modified_at_trigger
+BEFORE UPDATE ON question
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_at();
+
+CREATE TABLE question_vote (
+    question_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    vote_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the record is added
+    PRIMARY KEY (question_id, session_id)
+);
+
+CREATE INDEX idx_session_id ON question_vote (session_id);
+CREATE INDEX idx_vote_at ON question_vote (vote_at);
 

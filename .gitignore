@@ -2,15 +2,10 @@ docs/.ipynb_checkpoints
 .venv/
 .ipynb_checkpoints/
 config.py
-data/dear_prudence/articles/
-data/dear_prudence/index_pages/
-data/dear_prudence/results/
-data/dear_prudence/*.json
+data/dear_prudence/
 data/askamy/
-data/savage_love/*.json
-data/savage_love/articles/
-data/savage_love/index_pages/
-data/savage_love/results/
+data/savage_love/
+data/dear_abby/
 __pycache__/
-web/node_modules/*
+web/node_modules/
 

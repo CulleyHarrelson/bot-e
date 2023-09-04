@@ -1,12 +1,10 @@
 from flask import Flask, jsonify, request
 import bote
 from datetime import datetime
-
-# import logging
-# logging.basicConfig(level=logging.DEBUG)
-
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 def custom_json_serializer(obj):
@@ -38,11 +36,29 @@ def get_question_by_id(question_id):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/similar/<question_id>", methods=["GET"])
-def get_similar(question_id):
+@app.route("/next_question", methods=["POST"])
+def next_question():
+    """
+    this route is for the navigation on the question page. data is
+    saved to question_vote table and the embeddings is used for a
+    proximity search, or a random question is returned if they hit
+    the random button
+    """
     try:
-        # Get the rows from the database
-        return bote.similar(question_id)
+        direction = request.form.get("direction")
+        question_id = request.form.get("question_id")
+        session_id = request.form.get("session_id")
+
+        if direction == "random":
+            random_question = bote.random_question()
+            return jsonify({"question_id": random_question.get("question_id")})
+        else:
+            if not question_id:
+                return jsonify({"error": "question_id is required."}), 400
+            if not session_id:
+                return jsonify({"error": "session_id is required."}), 400
+            next_question_data = bote.next_question(question_id, session_id, direction)
+            return jsonify({"question_id": next_question_data.get("question_id")})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

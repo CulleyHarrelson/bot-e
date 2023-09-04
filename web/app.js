@@ -1,5 +1,6 @@
 var createError = require('http-errors');
 var express = require('express');
+var session = require('express-session');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
@@ -12,9 +13,26 @@ var signupRouter = require('./routes/signup');
 
 var app = express();
 
+const sess = {
+  secret: 'keyboard cat',
+  resave: false, // Set to false to avoid the deprecated warning
+  saveUninitialized: true, // Set to true or false as needed
+  cookie: {}
+};
+
+if (app.get('env') === 'production') {
+  app.set('trust proxy', 1); // trust first proxy
+  sess.cookie.secure = true; // serve secure cookies
+}
+
+app.use(session(sess));
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
+//if (app.get('env') === 'development') {
+app.locals.pretty = true;
+//}
 
 app.use(logger('dev'));
 app.use(express.json());

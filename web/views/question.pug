@@ -1,4 +1,45 @@
 extends layout
+mixin navButtons
+  .card
+    .card-divider
+      | Vote: upvote and downvote question to see more like/unlike this question. 
+    .card-section
+      form(id="question-form" method="post" action="/next_question")
+        input(type="hidden" name="question_id", value=questionId)
+        input(type="hidden" name="session_id", value=sessionId)
+        .grid-x.grid-margin-x.align-middle
+          .cell.medium-4.text-center
+            button.button(type="button", name="direction" value="down", data-tooltip, tabindex="3", title="Show me something else, not like this question.", onclick="submitForm('down')")
+              i.fi-dislike.custom-icon 
+          .cell.medium-4.text-center
+            button.button(type="button", name="direction" value="random", data-tooltip, tabindex="2", title="Show a Random Question", onclick="submitForm('random')")
+              | View Random Question
+          .cell.medium-4.text-center
+            button.button(type="button", name="direction" value="up", data-tooltip, tabindex="1", title="Show me more questions like this one", onclick="submitForm('up')")
+              i.fi-like.custom-icon 
+
+      script.
+        function submitForm(direction) {
+          const questionId = document.querySelector('input[name="question_id"]').value;
+          const sessionId = document.querySelector('input[name="session_id"]').value;
+          const formData = new FormData();
+          formData.append('direction', direction);
+          formData.append('question_id', questionId);
+          formData.append('session_id', sessionId);
+
+          fetch('http://localhost:6464/next_question', {
+            method: 'POST',
+            body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+            window.location.href = '/question/' + data['question_id']
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+        }
+
 
 block content
   head
@@ -12,6 +53,10 @@ block content
     meta(name="twitter:title" content=title)
     meta(name="twitter:description" content=description)
     meta(name="twitter:image" content=image_url)
+    style.
+      .custom-icon {
+        font-size: 24px;
+      }
 
   if !answer
     meta(http-equiv="refresh" content="10")
@@ -73,13 +118,30 @@ block content
         });
       });
   +topBar
+  script.
+      $(document).foundation();
   .flex-container.align-center.margin-3
     .small-up-1.medium-up-2
+      if !answer
+        .card
+          .card-divider
+            | Answer
+          .card-section
+            p.cell.small-12 It can take 10-15 seconds to respond - this page will refresh every 10 seconds until your response is ready.
+            .cell.small-12
+              .progress-container
+                .progress-meter(role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuetext="100 percent" aria-valuemax="100")
+                  span.progress-meter-text
+            .cell.small-12.text-center(style="padding-top: 20px;")
+              button.button(type='button', onclick='location.reload();') I'm tired of waiting, refresh now!
       .card
         .card-section
           h4 !{title}
           if image_url
             img(src=image_url width=256 height=256 alt=title)
+      if answer
+        +navButtons
+      else
       .card
         .card-divider
           | Question
@@ -92,25 +154,30 @@ block content
             .card-section
               each item in media
                 p
-                  a(href=`https://www.amazon.com/gp/search?ie=UTF8&tag=bote04-20&linkCode=ur2&linkId=cb41c8c087e0d9fb866de1f283c3a56c&camp=1789&creative=9325&index=books&keywords=${item.title} by ${item.author}`) #{item.title} by #{item.author}
-                  |  (#{item.media_type}) - #{item.correlation} 
-        if answer
-          .card
-            .card-divider
-              | Answer
-            .card-section
-              h4 bot-e
-              p !{answer}
-        else
-          .card
-            .card-divider
-              | Answer
-            .card-section
-              p.cell.small-12 It can take 10-15 seconds to respond - this page will refresh every 10 seconds until your response is ready.
-              .cell.small-12
-                .progress-container
-                  .progress-meter(role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuetext="100 percent" aria-valuemax="100")
-                    span.progress-meter-text
-              .cell.small-12.text-center(style="padding-top: 20px;")
-                button.button(type='button', onclick='location.reload();') I'm tired of waiting, refresh now!
+                  | <em>&bull; #{item.title}</em> by #{item.author}
+                  | (#{item.media_type}) - #{item.correlation} &bull;
+                  | 
+                  a(href=`https://www.amazon.com/gp/search?ie=UTF8&tag=bote04-20&linkCode=ur2&linkId=cb41c8c087e0d9fb866de1f283c3a56c&camp=1789&creative=9325&index=books&keywords=${item.title} by ${item.author}`)
+                    | amazon
+                  | &nbsp;&bull;&nbsp;
+                  a(href=`https://www.youtube.com/watch?v=${item.videoId}`)
+                    | youtube
+      if answer
+        .card
+          .card-divider
+            | Answer
+          .card-section
+            h4 bot-e
+            p !{answer}
+      if media
+        each item in media
+          if item.media_type == "song"
+            .card
+              .card-divider
+                | !{item.media_type}: !{item.correlation}
+              .card-section
+                .responsive-embed
+                  iframe(src=`https://www.youtube.com/embed/${item.videoId}` width="560" height="315" frameborder="0" allowfullscreen)
   
+      if answer
+        +navButtons

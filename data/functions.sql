@@ -1,12 +1,10 @@
 
--- return similar questions 
-CREATE OR REPLACE FUNCTION similar(question_id_in TEXT, row_limit INT DEFAULT 10)
+CREATE OR REPLACE FUNCTION proximal_question(question_id_in TEXT, session_id_in TEXT, similar_in BOOLEAN DEFAULT true)
 RETURNS SETOF question
 AS $$
 DECLARE
     target_embedding vector(1536);
 BEGIN
-    -- Get the target embedding for the given question_id
     SELECT embedding INTO target_embedding
     FROM question
     WHERE question_id = question_id_in;
@@ -15,13 +13,17 @@ BEGIN
         RAISE EXCEPTION 'No record found for the given question_id';
     END IF;
 
-    -- Perform the proximity search using pg_similarity extension
+    INSERT INTO question_vote (question_id, session_id) values (question_id_in, session_id_in);
+
     RETURN QUERY
     SELECT a.*
     FROM question a
-    WHERE a.question_id <> question_id_in  -- Exclude the same question_id
-    ORDER BY a.embedding <-> target_embedding  -- Order by proximity to the target embedding
-    LIMIT row_limit;  -- Limit the results to the specified row limit
+    WHERE a.question_id <> question_id_in 
+      AND a.question_id NOT IN (SELECT question_id FROM question_vote where session_id = session_id_in)
+    ORDER BY 
+      CASE WHEN similar_in THEN a.embedding <-> target_embedding ELSE target_embedding <-> a.embedding END, 
+      a.question_id 
+    LIMIT 1;  
 END;
 $$ LANGUAGE plpgsql;
 
@@ -48,47 +50,6 @@ BEGIN
     INSERT INTO question (question) VALUES (prompt_value) RETURNING * INTO inserted_question;
 
     RETURN inserted_question;
-END;
-$$ LANGUAGE plpgsql;
-
-
-/*
-get_proximal_question() notes:
-The first subquery inside the UNION selects the row with the greatest distance
-from the exclude_ids array, just as in the previous version of the function.
-The second subquery selects the row with the greatest proximity to the
-include_ids array.
-
-By using UNION, the function will return a single row, which is either the row
-with the greatest distance from the exclude_ids array or the row with the
-greatest proximity to the include_ids array, depending on which one has the
-higher value according to the <-> operator.
-*/
-
--- unclear if this works?
-CREATE OR REPLACE FUNCTION get_proximal_question(
-    exclude_ids TEXT[],
-    include_ids TEXT[]
-) RETURNS SETOF question AS $$
-BEGIN
-    RETURN QUERY
-    SELECT *
-    FROM question
-    WHERE question_id = (
-        SELECT question_id
-        FROM question
-        ORDER BY embedding <-> (SELECT embedding FROM question WHERE question_id = ANY(exclude_ids))
-        LIMIT 1
-    )
-    UNION ALL
-    SELECT *
-    FROM question
-    WHERE question_id = (
-        SELECT question_id
-        FROM question
-        ORDER BY embedding <-> (SELECT embedding FROM question WHERE question_id = ANY(include_ids))
-        LIMIT 1
-    );
 END;
 $$ LANGUAGE plpgsql;
 

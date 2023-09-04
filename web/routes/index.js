@@ -28,6 +28,7 @@ router.post('/',
         // console.log("after");
         //console.log("api response:", apiResponse.data['question_id']);
 
+
         res.redirect("/question/" + apiResponse.data['question_id']);
          
 

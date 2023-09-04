@@ -41,7 +41,6 @@ mindmap
 ## TODO:
 
 - [reCAPTCHA](https://developers.google.com/recaptcha/docs/versions)
-- Finish About Page
 - Finish TOS
 - Build Server
     - Flask/Gunicorn
@@ -53,13 +52,10 @@ mindmap
     - bot-e Daemon
     - email server
 - Transfer domain
+    - Oct 4
 - Add LLC stuff
 - Newsletter signup 
-- post processing
-    - summary
-    - media
-    - image
-
+    - capture email addresses
 
 
 ## FreeBSD services:

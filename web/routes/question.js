@@ -1,11 +1,14 @@
 var express = require('express');
 var router = express.Router();
 const axios = require('axios');
+var http = require('http');
+
 
 // Handle requests for /q/:question_id
 router.get('/:question_id', function(req, res, next) {
+  // console.log("session_id:", req.sessionID);
   const questionId = req.params.question_id;
-
+  const sessionId = req.sessionID; 
   axios.get(`http://localhost:6464/question/${questionId}`)
     .then(response => {
       const questionDetails = response.data; // Assuming the response contains the question details
@@ -41,7 +44,7 @@ router.get('/:question_id', function(req, res, next) {
 
 
       // console.log("question details:", questionDetails[2]);
-      res.render('question', { title, questionId, question, answer });
+      return res.render('question', { title, questionId, question, answer, sessionId });
     })
     .catch(error => {
       next(error); // Pass the error to the next middleware (error handler)
