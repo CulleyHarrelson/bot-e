@@ -42,9 +42,10 @@ router.get('/:question_id', function(req, res, next) {
         answer = null;
       }
 
+      const canonical = "https://bot-e.com/question/" + questionId
 
       // console.log("question details:", questionDetails[2]);
-      return res.render('question', { title, questionId, question, answer, sessionId });
+      return res.render('question', { title, questionId, question, answer, sessionId, canonical });
     })
     .catch(error => {
       next(error); // Pass the error to the next middleware (error handler)

@@ -5,7 +5,7 @@ var axios = require('axios');  // <-- Require axios
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'bot-e' });
+  res.render('index', { title: 'bot-e', description: 'bot-e: advice column 2.0.  What\'s going on?', canonical: 'https://bot-e/' });
 });
 
 /* POST home page. */

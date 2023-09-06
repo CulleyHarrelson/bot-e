@@ -197,7 +197,7 @@ def get_questions(question_ids):
     ]
 
     cursor.execute(
-        "select * from question where question_id = ANY(%s)",
+        "select question_id, question, answer, image_url, media, title, description, added_at from question where question_id = ANY(%s)",
         (valid_question_ids,),
     )
     questions = cursor.fetchall()
@@ -236,6 +236,31 @@ def get_question(question_id, return_json=True):
         return json_data
     else:
         return data
+
+
+def simplified_question(question_id):
+    """
+    suface limited data to api
+    """
+    conn, cursor = db_connect()
+
+    if not validate_key(question_id):
+        return json.dumps([])
+
+    cursor.execute(
+        "SELECT question_id, question, answer, image_url, media, title, description, added_at FROM question WHERE question_id = %s",
+        (question_id,),
+    )
+    question = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not question:
+        return json.dumps([])
+
+    columns = [desc[0] for desc in cursor.description]
+    data = dict(zip(columns, question))
+    return data
 
 
 def random_question():
@@ -345,14 +370,6 @@ def embed_questions():
         # time.sleep(0.8)
     conn.close()
     cursor.close()
-
-
-def content_compliance(question):
-    return question
-
-
-def advise(question):
-    return question
 
 
 def respond_to_question(conn, cursor, data):
@@ -514,127 +531,6 @@ def stability_image(title, question_id):
                 return f"/images/questions/{folder_character}/{question_id}.png"
 
     return ""
-
-
-def load_random_dicts():
-    with open("data/training_data.json", "r") as json_file:
-        data = json.load(json_file)
-
-    if not isinstance(data, list) or not all(isinstance(item, dict) for item in data):
-        raise ValueError("The JSON file should contain a list of dictionaries.")
-
-    random_dicts = random.sample(data, len(data))  # shuffling the data
-
-    # conn, cursor = db_connect()
-    for idx, dictionary in enumerate(random_dicts, start=1):
-        question = dictionary.get("question", "")
-        if question:
-            question_data = {"question": question}
-            headers = {"Content-Type": "application/json"}
-            response = requests.post(
-                "http://localhost:6464/question",
-                data=json.dumps(question_data),
-                headers=headers,
-            )
-            if response.status_code == 200:
-                data = response.json()
-                print(f"new question: {data[0]}")
-            else:
-                print(response.status_code)
-
-
-def save_pair(conn, cursor, question, answer):
-    cursor.execute(
-        "INSERT INTO training_data(question, answer) VALUES(%s, %s)",
-        (question, answer),
-    )
-    conn.commit()
-
-
-def next_training(cursor):
-    # this returns an question record that is in need of embedding
-    cursor.execute(
-        "SELECT * FROM training_data WHERE question_embedding IS NULL LIMIT 1"
-    )
-    return cursor.fetchone()
-
-
-def embed_training():
-    conn, cursor = db_connect()
-    while True:
-        training = next_training(cursor)
-        if training is None:
-            break
-
-        embedding = embedding_api(training["question"])
-        cursor.execute(
-            "UPDATE training_data SET question_embedding = %s WHERE training_data_id = %s",
-            (embedding, training["training_data_id"]),
-        )
-        conn.commit()
-        print("saved embeddings for: ", training["training_data_id"])
-        # time.sleep(0.8)
-    conn.close()
-    cursor.close()
-
-
-def process_sample_data():
-    file_path = "data/sample_data/consolidated.json"
-    conn, cursor = db_connect()
-    try:
-        with open(file_path, "r") as json_file:
-            data = json.load(json_file)
-            for item in data:
-                if "question" in item and "answer" in item:
-                    question = item["question"]
-                    answer = item["answer"]
-                    save_pair(conn, cursor, question, answer)
-                else:
-                    print("Invalid data format in JSON item:", item)
-    except FileNotFoundError:
-        print("File not found:", file_path)
-    except json.JSONDecodeError:
-        print("Error decoding JSON in the file:", file_path)
-    finally:
-        conn.close()
-        cursor.close()
-
-
-def export_divergent_records():
-    conn, cursor = db_connect()
-
-    # First, get a random record's question_embedding as the reference
-    cursor.execute(
-        "SELECT question_embedding FROM training_data ORDER BY RANDOM() LIMIT 1;"
-    )
-    reference_embedding = cursor.fetchone()[0]
-
-    # Then, fetch the 50 most divergent records from the reference embedding
-    query = """
-    SELECT training_data_id, question, answer
-    FROM training_data
-    ORDER BY training_data.question_embedding <-> %s DESC
-    LIMIT 50;
-    """
-    cursor.execute(query, (reference_embedding,))
-    results = cursor.fetchall()
-
-    # Convert the results to a list of dictionaries
-    records = [
-        {"training_data_id": r[0], "question": r[1], "answer": r[2]} for r in results
-    ]
-
-    # Export the records to a pretty-printed JSON file
-    with open("divergent_records.json", "w") as f:
-        json.dump(records, f, ensure_ascii=False, indent=4)
-
-    # Close the database connection
-    cursor.close()
-    conn.close()
-
-
-# Call the function
-# export_divergent_records()
 
 
 if __name__ == "__main__":

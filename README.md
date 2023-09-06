@@ -1,5 +1,26 @@
 # Human Advice is Overrated
 
+
+## TODO:
+
+- [reCAPTCHA](https://developers.google.com/recaptcha/docs/versions)
+- Finish TOS
+- Build Server
+    - Flask/Gunicorn
+    - Varnish
+    - Node.js
+    - Postgresql
+        - pgVector
+        - backups
+    - bot-e Daemon
+    - email server
+- Transfer domain
+    - Oct 4
+- Add LLC stuff
+- Newsletter signup 
+    - capture email addresses
+
+
 Advice Request Message Flow:
 
 ![Sequence Diagram](docs/bot-e_flow.png "Sequence Diagram")
@@ -37,25 +58,6 @@ mindmap
                 Marketing
                 Advice column
 ```
-
-## TODO:
-
-- [reCAPTCHA](https://developers.google.com/recaptcha/docs/versions)
-- Finish TOS
-- Build Server
-    - Flask/Gunicorn
-    - Varnish
-    - Node.js
-    - Postgresql
-        - pgVector
-        - backups
-    - bot-e Daemon
-    - email server
-- Transfer domain
-    - Oct 4
-- Add LLC stuff
-- Newsletter signup 
-    - capture email addresses
 
 
 ## FreeBSD services:

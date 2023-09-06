@@ -1,50 +1,5 @@
 extends layout
-mixin navButtons
-  .card
-    .card-divider
-      | Vote: upvote and downvote question to see more like/unlike this question. 
-    .card-section
-      form(id="question-form" method="post" action="/next_question")
-        input(type="hidden" name="question_id", value=questionId)
-        input(type="hidden" name="session_id", value=sessionId)
-        .grid-x.grid-margin-x.align-middle
-          .cell.medium-4.text-center
-            button.button(type="button", name="direction" value="down", data-tooltip, tabindex="3", title="Show me something else, not like this question.", onclick="submitForm('down')")
-              i.fi-dislike.custom-icon 
-          .cell.medium-4.text-center
-            button.button(type="button", name="direction" value="random", data-tooltip, tabindex="2", title="Show a Random Question", onclick="submitForm('random')")
-              | View Random Question
-          .cell.medium-4.text-center
-            button.button(type="button", name="direction" value="up", data-tooltip, tabindex="1", title="Show me more questions like this one", onclick="submitForm('up')")
-              i.fi-like.custom-icon 
-
-      script.
-        function submitForm(direction) {
-          const questionId = document.querySelector('input[name="question_id"]').value;
-          const sessionId = document.querySelector('input[name="session_id"]').value;
-          const formData = new FormData();
-          formData.append('direction', direction);
-          formData.append('question_id', questionId);
-          formData.append('session_id', sessionId);
-
-          fetch('http://localhost:6464/next_question', {
-            method: 'POST',
-            body: formData
-          })
-          .then(response => response.json())
-          .then(data => {
-            window.location.href = '/question/' + data['question_id']
-          })
-          .catch(error => {
-            console.error('Error:', error);
-          });
-        }
-
-
-block content
-  head
-    meta(name="description" content=description)
-    link(rel="canonical" href=`https://bot-e.com/question/${question_id}`)
+block meta
     meta(property="og:title" content=title)
     meta(property="og:description" content=description)
     meta(property="og:image" content=image_url)
@@ -53,11 +8,67 @@ block content
     meta(name="twitter:title" content=title)
     meta(name="twitter:description" content=description)
     meta(name="twitter:image" content=image_url)
-    style.
-      .custom-icon {
-        font-size: 24px;
-      }
+mixin navButtons
+  .card
+    .card-divider
+      | Vote: upvote and downvote question to see more like/unlike this question. 
+    .card-section
+  form(id="question-form" method="post" action="/next_question")
+    input(type="hidden", name="question_id", value=questionId)
+    input(type="hidden", name="session_id", value=sessionId)
+    .grid-x.grid-margin-x.align-middle
+      .cell.medium-4.text-center
+        button.button(type="button", name="direction" value="down", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitDown', data-tooltip, tabindex="3", title="Show me something else, not like this question.")
+          i.fi-dislike.custom-icon 
 
+      .cell.medium-4.text-center
+        button.button(type="button", name="direction" value="random", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitRandom', data-tooltip, tabindex="2", title="Show a Random Question")
+          | View Random Question
+
+      .cell.medium-4.text-center
+        button.button(type="button", name="direction" value="up", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitUp', data-tooltip, tabindex="1", title="Show me more questions like this one.")
+          i.fi-like.custom-icon 
+
+  script.
+    function submitForm(direction) {
+      const questionId = document.querySelector('input[name="question_id"]').value;
+      const sessionId = document.querySelector('input[name="session_id"]').value;
+      const formData = new FormData();
+      formData.append('direction', direction);
+      formData.append('question_id', questionId);
+      formData.append('session_id', sessionId);
+
+      fetch('http://localhost:6464/next_question', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        window.location.href = '/question/' + data['question_id']
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+
+    function onSubmitDown(token) {
+      submitForm('down');
+    }
+
+    function onSubmitRandom(token) {
+      submitForm('random');
+    }
+
+    function onSubmitUp(token) {
+      submitForm('up');
+    }
+
+
+block content
+  style.
+    .custom-icon {
+      font-size: 24px;
+    }
   if !answer
     meta(http-equiv="refresh" content="10")
     style.

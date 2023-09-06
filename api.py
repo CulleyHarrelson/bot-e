@@ -1,10 +1,12 @@
 from flask import Flask, jsonify, request
 import bote
 from datetime import datetime
+import json
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+
+CORS(app, origins=["https://bot-e.com", "http://localhost:3000"])
 
 
 def custom_json_serializer(obj):
@@ -30,7 +32,8 @@ def get_rows_by_ids(array_of_ids):
 def get_question_by_id(question_id):
     try:
         # Get the rows from the database
-        return bote.get_question(question_id)
+        question = bote.simplified_question(question_id)
+        return question
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
