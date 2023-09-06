@@ -188,6 +188,24 @@ def validate_key(key):
     return True
 
 
+def search(search_for):
+    conn, cursor = db_connect()
+
+    cursor.execute(
+        "select question_id, question, answer, image_url, media, title, description, added_at from search(%s)",
+        (search_for,),
+    )
+    questions = cursor.fetchall()
+    # Convert the rows to a list of dictionaries
+    columns = [desc[0] for desc in cursor.description]
+    data = [dict(zip(columns, row)) for row in questions]
+
+    cursor.close()
+    conn.close()
+    json_response = json.dumps(data, default=custom_json_serializer)
+    return json_response
+
+
 def get_questions(question_ids):
     conn, cursor = db_connect()
 

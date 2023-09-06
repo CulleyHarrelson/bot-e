@@ -106,7 +106,7 @@ EXECUTE FUNCTION check_question_id_length();
 CREATE OR REPLACE FUNCTION notify_new_question()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Issue the NOTIFY statement when a new row is inserted into the "question" table
+    -- bote.py is listening
     NOTIFY new_question;
 
     RETURN NEW;
@@ -123,13 +123,18 @@ BEFORE UPDATE ON question
 FOR EACH ROW
 EXECUTE FUNCTION update_modified_at();
 
+DROP TABLE IF EXISTS question_vote CASCADE;
+
+-- this table tracks up and down votes.  It is also 
+-- referenced in the proximal_question function
 CREATE TABLE question_vote (
     question_id TEXT NOT NULL,
-    session_id TEXT NOT NULL,
-    vote_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the record is added
-    PRIMARY KEY (question_id, session_id)
+    session_id TEXT NOT NULL, 
+    up_vote BOOLEAN NOT NULL DEFAULT TRUE,
+    vote_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (session_id, vote_at)
 );
 
-CREATE INDEX idx_session_id ON question_vote (session_id);
+CREATE INDEX idx_question_id ON question_vote (question_id);
 CREATE INDEX idx_vote_at ON question_vote (vote_at);
 

@@ -28,6 +28,18 @@ def get_rows_by_ids(array_of_ids):
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/search/<search_for>", methods=["GET"])
+def search(search_for):
+    try:
+        # Split the provided array_of_ids into a list of individual ids
+
+        # Get the rows from the database
+        return bote.search(search_for)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/question/<question_id>", methods=["GET"])
 def get_question_by_id(question_id):
     try:
