@@ -12,39 +12,48 @@ mixin navButtons
   .card
     .card-divider
       | Vote: upvote and downvote question to see more like/unlike this question. 
-    .card-section
-  form(id="question-form" method="post" action="/next_question")
-    input(type="hidden", name="question_id", value=questionId)
-    input(type="hidden", name="session_id", value=sessionId)
-    .grid-x.grid-margin-x.align-middle
-      .cell.medium-4.text-center
-        button.button(type="button", name="direction" value="down", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitDown', data-tooltip, tabindex="3", title="Show me something else, not like this question.")
-          i.fi-dislike.custom-icon 
+      .card-section
+    form(id="question-form" method="post" action="/next_question")
+        input(type="hidden", name="question_id", value=questionId)
+        input(type="hidden", name="session_id", value=sessionId)
+        .grid-x.grid-margin-x.align-middle
+          .cell.medium-4.text-center
+            button.button(type="button", name="direction" value="down", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitDown', data-tooltip, tabindex="3", title="Show me something else, not like this question.")
+              i.fi-dislike.custom-icon
 
-      .cell.medium-4.text-center
-        button.button(type="button", name="direction" value="random", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitRandom', data-tooltip, tabindex="2", title="Show a Random Question")
-          | View Random Question
+          .cell.medium-4.text-center
+            button.button(type="button", name="direction" value="random", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitRandom', data-tooltip, tabindex="2", title="Show a Random Question")
+              | View Random Question
 
-      .cell.medium-4.text-center
-        button.button(type="button", name="direction" value="up", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitUp', data-tooltip, tabindex="1", title="Show me more questions like this one.")
-          i.fi-like.custom-icon 
+          .cell.medium-4.text-center
+            button.button(type="button", name="direction" value="up", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitUp', data-tooltip, tabindex="1", title="Show me more questions like this one.")
+              i.fi-like.custom-icon
 
   script.
-    function submitForm(direction) {
+    function submitForm(direction, token) {
       const questionId = document.querySelector('input[name="question_id"]').value;
       const sessionId = document.querySelector('input[name="session_id"]').value;
       const formData = new FormData();
       formData.append('direction', direction);
       formData.append('question_id', questionId);
       formData.append('session_id', sessionId);
+      formData.append('recaptcha_token', token); 
 
-      fetch('http://localhost:6464/next_question', {
+      fetch('/navigate', { 
         method: 'POST',
-        body: formData
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+          'Content-Type': 'application/json', // Set the content type to JSON
+        }
       })
       .then(response => response.json())
       .then(data => {
-        window.location.href = '/question/' + data['question_id']
+        if (data.success) {
+            window.location.href = '/question/' + data['question_id'];
+        } else {
+          // reCAPTCHA verification failed, display an error or take appropriate action
+          console.error('reCAPTCHA verification failed');
+        }
       })
       .catch(error => {
         console.error('Error:', error);
@@ -52,19 +61,23 @@ mixin navButtons
     }
 
     function onSubmitDown(token) {
-      submitForm('down');
+      submitForm('down', token);
     }
 
     function onSubmitRandom(token) {
-      submitForm('random');
+      submitForm('random', token);
     }
 
     function onSubmitUp(token) {
-      submitForm('up');
+      submitForm('up', token);
     }
 
 
 block content
+  if error
+    .error-shoutout
+      p Error: #{error}
+
   style.
     .custom-icon {
       font-size: 24px;
@@ -192,3 +205,4 @@ block content
   
       if answer
         +navButtons
+  +siteFooter

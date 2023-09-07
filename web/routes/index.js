@@ -22,22 +22,29 @@ router.post('/',
     }
     else {
       try {
-        // Post the question to the local API server and store the result.
 
-        const apiResponse = await axios.post('http://127.0.0.1:6464/ask', { question: req.body.question });
-        // console.log("after");
-        //console.log("api response:", apiResponse.data['question_id']);
+          // Extract the reCAPTCHA token from the request
+          const recaptchaToken = req.body["g-recaptcha-response"];
+          const secretKey = process.env.CAPTCHA_SECRET_KEY;
 
+          // Send the token to Google's reCAPTCHA API for verification
+          const verificationURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
+          const verificationResponse = await axios.post(verificationURL);
 
-        res.redirect("/question/" + apiResponse.data['question_id']);
-         
+          // Check if the verification was successful
+          if (verificationResponse.data.success) {
+            if (verificationResponse.data.score > 0.5) {
+              //console.log("reCAPTCHA Score:", verificationResponse.data.score);
+              const apiResponse = await axios.post('http://127.0.0.1:6464/ask', { question: req.body.question });
+              res.redirect("/question/" + apiResponse.data['question_id']);
+            } else {
+              res.render('index', { title: 'bot-e', errors: ["CAPTCHA verification failed."] });
+            }
+          } else {
+              // Handle the failed CAPTCHA verification
+              res.render('index', { title: 'bot-e', errors: ["CAPTCHA verification failed."] });
+          }
 
-        // The form data is valid. Include the API response in the rendered view.
-        // salkdfj
-        //res.render('index', { 
-        //    title: 'bot-e', 
-        //    question: apiResponse.data[0]
-        //});
       } catch (err) {
         // Handle error (e.g., API server might be down or there was a network error)
         res.render('index', { title: 'bot-e', errors: [{msg: 'There was an error sending the question to the API.'}] });

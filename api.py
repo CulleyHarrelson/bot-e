@@ -60,9 +60,10 @@ def next_question():
     the random button
     """
     try:
-        direction = request.form.get("direction")
-        question_id = request.form.get("question_id")
-        session_id = request.form.get("session_id")
+        # print(request.json["session_id"])
+        direction = request.json["direction"]
+        question_id = request.json["question_id"]
+        session_id = request.json["session_id"]
 
         if direction == "random":
             random_question = bote.random_question()
