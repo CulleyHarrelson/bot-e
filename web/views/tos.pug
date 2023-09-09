@@ -18,4 +18,25 @@ block content
     .grid-x.grid-margin-x
       .cell.small-12.medium-6
         a.button(href="/") Back
-  +siteFooter
+    script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+    .grid-container
+          h1 Date Range Picker
+          .grid-x.grid-margin-x
+            .cell.small-6
+              p Start Date:
+              input(type="date" id="startDatePicker")
+            .cell.small-6
+              p End Date:
+              input(type="date" id="endDatePicker")
+
+          script.
+            $(document).foundation(); // Initialize Foundation
+
+            // Handle input changes
+            $('#startDatePicker, #endDatePicker').on('input', function () {
+              const startDate = $('#startDatePicker').val();
+              const endDate = $('#endDatePicker').val();
+
+              console.log('Start Date:', startDate);
+              console.log('End Date:', endDate);
+            });

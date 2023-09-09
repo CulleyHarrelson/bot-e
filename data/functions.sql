@@ -76,3 +76,53 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_top_upvotes(start_date DATE, row_limit INT DEFAULT 50)
+RETURNS TABLE (
+    question_id TEXT,
+    question TEXT,
+    answer TEXT,
+    image_url TEXT,
+    media JSONB,
+    added_at TIMESTAMP WITH TIME ZONE,
+    title TEXT,
+    description TEXT,
+    up_votes BIGINT,
+    down_votes BIGINT
+)
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        q.question_id,
+        q.question,
+        q.answer,
+        q.image_url,
+        q.media,
+        q.added_at,
+        q.title,
+        q.description,
+        COUNT(CASE WHEN qv.up_vote THEN 1 ELSE NULL END) AS up_votes,
+        COUNT(CASE WHEN NOT qv.up_vote THEN 1 ELSE NULL END) AS down_votes
+    FROM
+        question_vote qv
+    JOIN
+        question q
+    ON
+        qv.question_id = q.question_id
+    WHERE
+        qv.vote_at >= start_date
+        AND qv.vote_at <= current_date + INTERVAL '30 day'
+    GROUP BY
+        q.question_id,
+        q.question,
+        q.answer,
+        q.image_url,
+        q.media,
+        q.added_at,
+        q.title,
+        q.description
+    ORDER BY
+        up_votes DESC
+    LIMIT row_limit;
+END;
+$$ LANGUAGE plpgsql;

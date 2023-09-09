@@ -1,0 +1,33 @@
+extends layout
+include mixins
+
+block content
+  +topBar
+  .grid-container
+    .grid-x.grid-margin-x
+      .cell.small-10
+        .slider(data-slider, data-initial-start="50")
+          span.slider-handle(data-slider-handle, role="slider", tabindex="1", aria-controls="sliderOutput1")
+          span.slider-fill(data-slider-fill)
+      .cell.small-2
+        input(type="number", id="sliderOutput1")
+    .grid-x.grid-margin-x
+      h1 Trending
+
+  .grid-container
+    each question in questions
+      .question-container
+        a(href=question.canonical)
+          h4= question.title
+          p
+
+        .flex-container
+          if question.image_url
+            .image-container
+              img(src=question.image_url, alt='Image', height='64px', width='64px', style='margin-right:10px;')
+          .description-container
+            p Description: #{question.description}
+  +siteFooter
+
+
+

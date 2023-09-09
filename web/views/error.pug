@@ -1,6 +1,9 @@
 extends layout
+include mixins
 
 block content
-  h1= message
-  h2= error.status
-  pre #{error.stack}
+  +topBar
+  .grid-container.padding-top-2
+    .grid-x.grid-margin-x
+      h2= error.message
+  +siteFooter

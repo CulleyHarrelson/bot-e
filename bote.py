@@ -1,4 +1,3 @@
-# 3408
 import psycopg2
 import psycopg2.extensions
 from psycopg2.extras import DictCursor
@@ -6,7 +5,6 @@ from psycopg2.extras import DictCursor
 import requests
 import openai
 import json
-import random
 from datetime import datetime
 import os
 
@@ -17,11 +15,9 @@ from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 import googleapiclient.discovery
 from googleapiclient.errors import HttpError
-
-os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
-
 from config import OPENAI_API_KEY, POSTGRESQL_KEY
 
+os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
 
 openai.api_key = OPENAI_API_KEY
 pg_password = POSTGRESQL_KEY
@@ -194,6 +190,25 @@ def search(search_for):
     cursor.execute(
         "select question_id, question, answer, image_url, media, title, description, added_at from search(%s)",
         (search_for,),
+    )
+    questions = cursor.fetchall()
+    # Convert the rows to a list of dictionaries
+    columns = [desc[0] for desc in cursor.description]
+    data = [dict(zip(columns, row)) for row in questions]
+
+    cursor.close()
+    conn.close()
+    json_response = json.dumps(data, default=custom_json_serializer)
+    return json_response
+
+
+def trending(start_date):
+    conn, cursor = db_connect()
+
+    # third parameter row_limit not used below
+    cursor.execute(
+        "select * from get_top_upvotes(%s)",
+        (start_date,),
     )
     questions = cursor.fetchall()
     # Convert the rows to a list of dictionaries

@@ -1,8 +1,10 @@
 from flask import Flask, jsonify, request
 import bote
 from datetime import datetime
+from dateutil.parser import isoparse
 import json
 from flask_cors import CORS
+from werkzeug.exceptions import BadRequest
 
 app = Flask(__name__)
 
@@ -28,13 +30,27 @@ def get_rows_by_ids(array_of_ids):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/search/<search_for>", methods=["GET"])
-def search(search_for):
+@app.route("/trending/<start_date>", methods=["GET"])
+def trending(start_date):
     try:
-        # Split the provided array_of_ids into a list of individual ids
+        try:
+            start_date_parsed = isoparse(start_date)
+        except ValueError:
+            raise BadRequest(
+                "Invalid date format. Please use ISO 8601 format (YYYY-MM-DD)."
+            )
+        # Verify that the parsed dates are valid
+        if not isinstance(start_date_parsed, datetime):
+            raise ValueError("Invalid date format")
+
+        current_date = datetime.now()
+
+        # Verify that the parsed dates are valid
+        if not isinstance(start_date_parsed, datetime):
+            raise ValueError("Invalid date format")
 
         # Get the rows from the database
-        return bote.search(search_for)
+        return bote.trending(start_date)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
