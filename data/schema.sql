@@ -138,3 +138,48 @@ CREATE TABLE question_vote (
 CREATE INDEX idx_question_id ON question_vote (question_id);
 CREATE INDEX idx_vote_at ON question_vote (vote_at);
 
+-- Drop the 'question' table and its dependencies if they exist
+DROP TABLE IF EXISTS question_comment CASCADE;
+
+CREATE TABLE question_comment (
+  comment_id SERIAL PRIMARY KEY,
+  question_id TEXT NOT NULL REFERENCES question (question_id),
+  parent_comment_id INTEGER REFERENCES question_comment (comment_id),
+  added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  session_id TEXT NOT NULL,
+  comment TEXT NOT NULL
+);
+
+
+CREATE INDEX idx_question_comment_question ON question_comment (question_id);
+CREATE INDEX idx_question_comment_parent ON question_comment (parent_comment_id);
+CREATE INDEX idx_question_comment_date ON question_comment (added_at);
+CREATE INDEX idx_question_comment_session ON question_comment (session_id);
+
+-- Create a function to perform the check
+CREATE OR REPLACE FUNCTION check_parent_question_id()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Check if parent_comment_id is not null
+  IF NEW.parent_comment_id IS NOT NULL THEN
+    -- Fetch the question_id associated with the parent_comment_id
+    SELECT question_id INTO NEW.question_id
+    FROM question_comment
+    WHERE comment_id = NEW.parent_comment_id;
+
+    -- Check if the fetched question_id is not the same as NEW.question_id
+    IF NEW.question_id <> OLD.question_id THEN
+      RAISE EXCEPTION 'The parent_comment_id does not belong to the same question.';
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create the trigger
+CREATE TRIGGER check_parent_question_id_trigger
+BEFORE INSERT ON question_comment
+FOR EACH ROW
+EXECUTE FUNCTION check_parent_question_id();
+

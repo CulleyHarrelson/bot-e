@@ -13,6 +13,7 @@ var searchRouter = require('./routes/search');
 var captchaRouter = require('./routes/recaptcha');
 var navigateRouter = require('./routes/navigate');
 var trendingRouter = require('./routes/trending');
+var commentRouter = require('./routes/comment');
 
 var app = express();
 
@@ -51,6 +52,7 @@ app.use('/search', searchRouter);
 app.use('/recaptcha', captchaRouter);
 app.use('/navigate', navigateRouter);
 app.use('/trending', trendingRouter);
+app.use('/comment', commentRouter);
 
 
 // catch 404 and forward to error handler
@@ -61,7 +63,7 @@ app.use(function(req, res, next) {
 // error handler
 app.use(function(err, req, res, next) {
   // Log the error to your console
-  console.error('Error:', err);
+  //console.error('Error:', err);
 
   // Set locals, only providing error in development
   res.locals.message = err.message;

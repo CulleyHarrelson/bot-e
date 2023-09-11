@@ -11,23 +11,21 @@ block meta
 mixin navButtons
   .card
     .card-divider
-      | Vote: upvote and downvote question to see more like/unlike this question. 
+      | View Another Question
       .card-section
     form(id="question-form" method="post" action="/next_question")
         input(type="hidden", name="question_id", value=questionId)
         input(type="hidden", name="session_id", value=sessionId)
-        .grid-x.grid-margin-x.align-middle
+        .grid-x.grid-margin-x.align-middle(style="padding-top: 10px;")
           .cell.medium-4.text-center
-            button.button(type="button", name="direction" value="down", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitDown', data-tooltip, tabindex="3", title="Show me something else, not like this question.")
-              i.fi-dislike.custom-icon
+            button.button(type="button", name="direction" value="down", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitDown', data-tooltip, tabindex="3", title="Show me something else, not like this question.") Show me Something Different
 
           .cell.medium-4.text-center
             button.button(type="button", name="direction" value="random", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitRandom', data-tooltip, tabindex="2", title="Show a Random Question")
               | View Random Question
 
           .cell.medium-4.text-center
-            button.button(type="button", name="direction" value="up", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitUp', data-tooltip, tabindex="1", title="Show me more questions like this one.")
-              i.fi-like.custom-icon
+            button.button(type="button", name="direction" value="up", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitUp', data-tooltip, tabindex="1", title="Show me more questions like this one.") Show me Something Similar
 
   script.
     function submitForm(direction, token) {
@@ -163,29 +161,12 @@ block content
           h4 !{title}
           if image_url
             img(src=image_url width=256 height=256 alt=title)
-      if answer
-        +navButtons
-      else
+      if !answer
       .card
         .card-divider
           | Question
         .card-section
           p !{question}
-        if media
-          .card
-            .card-divider
-              | Media Recommendations
-            .card-section
-              each item in media
-                p
-                  | <em>&bull; #{item.title}</em> by #{item.author}
-                  | (#{item.media_type}) - #{item.correlation} &bull;
-                  | 
-                  a(href=`https://www.amazon.com/gp/search?ie=UTF8&tag=bote04-20&linkCode=ur2&linkId=cb41c8c087e0d9fb866de1f283c3a56c&camp=1789&creative=9325&index=books&keywords=${item.title} by ${item.author}`)
-                    | amazon
-                  | &nbsp;&bull;&nbsp;
-                  a(href=`https://www.youtube.com/watch?v=${item.videoId}`)
-                    | youtube
       if answer
         .card
           .card-divider
@@ -193,7 +174,52 @@ block content
           .card-section
             h4 bot-e
             p !{answer}
-      if media
+        +navButtons
+        .card
+          .card-divider
+            | Comments
+          .card-section
+            .row
+              .small-12.columns
+                form
+                  .row
+                    .small-12.medium-10.columns
+                      input(type='text', id='comment', placeholder='Enter your comment', name='comment')
+                    .small-12.medium-2.columns 
+                      button(type='submit', class='button float-right g-recaptcha', data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onCommentAdd', data-tooltip, tabindex="1", title="Show me more questions like this one.") Add Comment
+                    script.
+                      function onCommentAdd(token) {
+                        const comment = document.querySelector('input[name="comment"]').value;
+                        const questionId = document.querySelector('input[name="question_id"]').value;
+                        const sessionId = document.querySelector('input[name="session_id"]').value;
+
+                        const formData = new FormData();
+                        formData.append('comment', comment);
+                        formData.append('question_id', questionId);
+                        formData.append('session_id', sessionId);
+                        formData.append('recaptcha_token', token); 
+
+                        fetch('/comment', { 
+                          method: 'POST',
+                          body: JSON.stringify(Object.fromEntries(formData)),
+                          headers: {
+                            'Content-Type': 'application/json', 
+                          }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                          if (data.success) {
+                              window.location.href = '/question/' + data['question_id'];
+                          } else {
+                            console.error('reCAPTCHA verification failed');
+                          }
+                        })
+                        .catch(error => {
+                          console.error('Error:', error);
+                        });
+                      }
+
+      if false
         each item in media
           if item.media_type == "song"
             .card
@@ -203,6 +229,4 @@ block content
                 .responsive-embed
                   iframe(src=`https://www.youtube.com/embed/${item.videoId}` width="560" height="315" frameborder="0" allowfullscreen)
   
-      if answer
-        +navButtons
   +siteFooter

@@ -116,5 +116,39 @@ def post_question():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/add_comment", methods=["POST"])
+def add_comment():
+    try:
+        # Get the question text from the request's JSON body
+        data = request.get_json()
+
+        # Check if the "question" field is present and not empty
+        if "question_id" not in data or not data["question_id"]:
+            return jsonify({"error": "question_id is required."}), 400
+
+        question_id = data["question_id"]
+
+        if "comment" not in data or not data["comment"]:
+            return jsonify({"error": "comment is required."}), 400
+
+        comment = data["comment"]
+
+        if "session_id" not in data or not data["session_id"]:
+            return jsonify({"error": "session_id is required."}), 400
+
+        session_id = data["session_id"]
+
+        # add this in to enable replies
+        # parent_comment_id = data["parent_comment_id"]
+
+        # Process the question using bote or any other necessary method
+        comment = bote.add_comment(question_id, comment, session_id)
+
+        return comment
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=6464)

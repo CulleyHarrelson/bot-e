@@ -1,0 +1,100 @@
+
+POSTGRESQL NOTES:
+
+root@dt20-pdx:/usr/ports/databases/postgresql15-server # make install
+===>  Installing for postgresql15-server-15.4
+===>  Checking if postgresql15-server is already installed
+===>   Registering installation for postgresql15-server-15.4
+Installing postgresql15-server-15.4...
+===> Creating groups.
+Using existing group 'postgres'.
+===> Creating users
+Using existing user 'postgres'.
+===> Creating homedir(s)
+
+  =========== BACKUP YOUR DATA! =============
+  As always, backup your data before
+  upgrading. If the upgrade leads to a higher
+  major revision (e.g. 9.6 -> 10), a dump
+  and restore of all databases is
+  required. This is *NOT* done by the port!
+  See https://www.postgresql.org/docs/current/upgrading.html
+  ===========================================
+For procedural languages and postgresql functions, please note that
+you might have to update them when updating the server.
+
+If you have many tables and many clients running, consider raising
+kern.maxfiles using sysctl(8), or reconfigure your kernel
+appropriately.
+
+The port is set up to use autovacuum for new databases, but you might
+also want to vacuum and perhaps backup your database regularly. There
+is a periodic script, /usr/local/etc/periodic/daily/502.pgsql, that
+you may find useful. You can use it to backup and perform vacuum on all
+databases nightly. Per default, it performs `vacuum analyze'. See the
+script for instructions. For autovacuum settings, please review
+~postgres/data/postgresql.conf.
+
+If you plan to access your PostgreSQL server using ODBC, please
+consider running the SQL script /usr/local/share/postgresql/odbc.sql
+to get the functions required for ODBC compliance.
+
+Please note that if you use the rc script,
+/usr/local/etc/rc.d/postgresql, to initialize the database, unicode
+(UTF-8) will be used to store character data by default.  Set
+postgresql_initdb_flags or use login.conf settings described below to
+alter this behaviour. See the start rc script for more info.
+
+To set limits, environment stuff like locale and collation and other
+things, you can set up a class in /etc/login.conf before initializing
+the database. Add something similar to this to /etc/login.conf:
+---
+postgres:\
+	:lang=en_US.UTF-8:\
+	:setenv=LC_COLLATE=C:\
+	:tc=default:
+---
+and run `cap_mkdb /etc/login.conf'.
+Then add 'postgresql_class="postgres"' to /etc/rc.conf.
+
+======================================================================
+
+To initialize the database, run
+
+  /usr/local/etc/rc.d/postgresql initdb
+
+You can then start PostgreSQL by running:
+
+  /usr/local/etc/rc.d/postgresql start
+
+For postmaster settings, see ~postgres/data/postgresql.conf
+
+NB. FreeBSD's PostgreSQL port logs to syslog by default
+    See ~postgres/data/postgresql.conf for more info
+
+NB. If you're not using a checksumming filesystem like ZFS, you might
+    wish to enable data checksumming. It can be enabled during
+    the initdb phase, by adding the "--data-checksums" flag to
+    the postgresql_initdb_flags rcvar. Otherwise you can enable it later by
+    pg_checksums.  Check the initdb(1) manpage for more info
+    and make sure you understand the performance implications.
+
+======================================================================
+
+To run PostgreSQL at startup, add
+'postgresql_enable="YES"' to /etc/rc.conf
+
+===> SECURITY REPORT:
+      This port has installed the following files which may act as network
+      servers and may therefore pose a remote security risk to the system.
+/usr/local/bin/postgres
+
+      If there are vulnerabilities in these programs there may be a security
+      risk to the system. FreeBSD makes no guarantee about the security of
+      ports included in the Ports Collection. Please type 'make deinstall'
+      to deinstall the port if this is a concern.
+
+      For more information, and contact details about the security
+      status of this software, see the following webpage:
+https://www.postgresql.org/
+root@dt20-pdx:/usr/ports/databases/postgresql15-server #

@@ -6,7 +6,6 @@ var http = require('http');
 
 // Handle requests for /q/:question_id
 router.get('/:question_id', function(req, res, next) {
-  // console.log("session_id:", req.sessionID);
   const questionId = req.params.question_id;
   const sessionId = req.sessionID; 
   axios.get(`http://localhost:6464/question/${questionId}`)

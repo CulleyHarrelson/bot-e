@@ -126,3 +126,34 @@ BEGIN
     LIMIT row_limit;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION insert_question_comment(
+  in_question_id TEXT,
+  in_session_id TEXT,
+  in_comment TEXT,
+  in_parent_comment_id INTEGER DEFAULT NULL
+) RETURNS question_comment AS $$
+DECLARE
+  comment_count INTEGER;
+  new_comment question_comment;
+BEGIN
+  -- Count the number of comments by session_id in the last hour
+  SELECT COUNT(*)
+  INTO comment_count
+  FROM question_comment
+  WHERE session_id = in_session_id
+    AND added_at >= NOW() - INTERVAL '1 hour';
+
+  -- Check if the comment_count is 10 or more, and raise an error if true
+  IF comment_count >= 10 THEN
+    RAISE EXCEPTION 'Error: Too many comments in the last hour for this session. Please try again soon.';
+  ELSE
+    -- Insert the new comment and return the inserted row
+    INSERT INTO question_comment (question_id, parent_comment_id, session_id, comment)
+    VALUES (in_question_id, in_parent_comment_id, in_session_id, in_comment)
+    RETURNING * INTO new_comment;
+    
+    RETURN new_comment;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;

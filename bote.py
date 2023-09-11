@@ -156,6 +156,32 @@ def post_question(question):
     return question
 
 
+def add_comment(question_id, comment, session_id):
+    try:
+        if not validate_key(question_id):
+            return json.dumps({"error": "question_id is required."})
+
+        conn, cursor = db_connect()
+        cursor.execute(
+            "select * from insert_question_comment (%s, %s, %s)",
+            (
+                question_id,
+                comment,
+                session_id,
+            ),
+        )
+        conn.commit()
+        result_tuple = cursor.fetchone()
+        # moderate_question(conn, cursor, question)
+
+        cursor.close()
+        conn.close()
+        return result_tuple
+    except psycopg2.Error as e:
+        error_message = str(e)
+        return json.dumps({"error": error_message})
+
+
 def moderation_api(input_text):
     response = openai.Moderation.create(input=input_text)
     return response
