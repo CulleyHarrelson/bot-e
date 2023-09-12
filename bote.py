@@ -166,8 +166,8 @@ def add_comment(question_id, comment, session_id):
             "select * from insert_question_comment (%s, %s, %s)",
             (
                 question_id,
-                comment,
                 session_id,
+                comment,
             ),
         )
         conn.commit()
@@ -320,6 +320,29 @@ def simplified_question(question_id):
     columns = [desc[0] for desc in cursor.description]
     data = dict(zip(columns, question))
     return data
+
+
+def question_comments(question_id):
+    # TODO: moderate this
+    conn, cursor = db_connect()
+
+    if not validate_key(question_id):
+        return json.dumps([])
+
+    cursor.execute(
+        "SELECT question_id, comment, session_id, parent_comment_id, comment_id, TO_CHAR(added_at, 'YYYY-MM-DD HH:MI AM') AS added_at FROM question_comment WHERE question_id = %s order by added_at desc limit 100",
+        (question_id,),
+    )
+
+    comments = cursor.fetchall()
+    # Convert the rows to a list of dictionaries
+    columns = [desc[0] for desc in cursor.description]
+    data = [dict(zip(columns, row)) for row in comments]
+
+    cursor.close()
+    conn.close()
+    json_response = json.dumps(data, default=custom_json_serializer)
+    return json_response
 
 
 def random_question():

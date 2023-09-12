@@ -1,25 +1,38 @@
 # Human Advice is Overrated
 
 
-## TODO:
+## MVP TODO:
 
-- [reCAPTCHA](https://developers.google.com/recaptcha/docs/versions)
 - Finish TOS
+- finish comments
+    - do not refresh page
+- change image_url to use full domain
 - Build Server
-    - Flask/Gunicorn
-    - Varnish
     - Node.js
-    - Postgresql
-        - pgVector
+        -SSL certificate
+    - Postgresql - DONE
+        - pgVector - DONE
         - backups
-    - bot-e Daemon
-    - email server
+    - Python 3.9 .venv
+        - Flask/Gunicorn
+        - bot-e Daemon
+            - logging
+            - images
 - Transfer domain
     - Oct 4
 - Add LLC stuff
-- Newsletter signup 
-    - capture email addresses
+- Email Marketing
+    - capture email addresses?
 
+Backlog:
+    - Flutter App
+    - Varnish
+    - Email Marketing
+    - Create Social Media Presence
+        - Instagram
+        - LinkedIn
+        - TikTok
+        - Facebook
 
 Advice Request Message Flow:
 
@@ -59,15 +72,6 @@ mindmap
                 Advice column
 ```
 
-
-## FreeBSD services:
-
-- Email Server
-- Postgresql
-- Bot-e Daemon
-- Flask/Gunicorn API
-- Node.js Server
-- Varnish Cache
 
 ## Postgresql setup
 

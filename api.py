@@ -5,10 +5,27 @@ from dateutil.parser import isoparse
 import json
 from flask_cors import CORS
 from werkzeug.exceptions import BadRequest
+from html import unescape
+import re
 
 app = Flask(__name__)
 
 CORS(app, origins=["https://bot-e.com", "http://localhost:3000"])
+
+
+def contains_html(input_string):
+    cleaned_string = unescape(input_string)
+
+    html_pattern = re.compile(r"<[^>]+>")
+    return bool(html_pattern.search(cleaned_string))
+
+
+def contains_url(input_string):
+    url_pattern = re.compile(r"https?://\S+|www\.\S+", re.IGNORECASE)
+
+    matches = url_pattern.findall(input_string)
+
+    return bool(matches)
 
 
 def custom_json_serializer(obj):
@@ -51,6 +68,17 @@ def trending(start_date):
 
         # Get the rows from the database
         return bote.trending(start_date)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/comments/<question_id>", methods=["GET"])
+def get_question_comments_id(question_id):
+    try:
+        # Get the rows from the database
+        comments = bote.question_comments(question_id)
+        return comments
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -130,6 +158,12 @@ def add_comment():
 
         if "comment" not in data or not data["comment"]:
             return jsonify({"error": "comment is required."}), 400
+
+        if contains_html(data["comment"]) or contains_url(data["comment"]):
+            return (
+                jsonify({"error": "comments with html and links are not processed."}),
+                400,
+            )
 
         comment = data["comment"]
 

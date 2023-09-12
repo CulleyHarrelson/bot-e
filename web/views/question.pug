@@ -179,6 +179,7 @@ block content
           .card-divider
             | Comments
           .card-section
+            .row(id="callout")
             .row
               .small-12.columns
                 form
@@ -188,8 +189,42 @@ block content
                     .small-12.medium-2.columns 
                       button(type='submit', class='button float-right g-recaptcha', data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onCommentAdd', data-tooltip, tabindex="1", title="Show me more questions like this one.") Add Comment
                     script.
+                      function formatDate() {
+                        const now = new Date();
+                        return now.toLocaleString('en-US', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        });
+                      }
+                      function showCallout(message, messageType) {
+                        const notice = document.createElement('div');
+                        notice.textContent = message;
+                        notice.classList.add('callout', messageType);
+                        const calloutContainer = document.getElementById('callout');
+
+                        if (calloutContainer) {
+                          calloutContainer.appendChild(notice);
+                          setTimeout(() => {
+                            calloutContainer.removeChild(notice);
+                          }, 3000);
+                        } else {
+                          console.error('Callout container with id "callout_id" not found.');
+                        }
+                      }
                       function onCommentAdd(token) {
-                        const comment = document.querySelector('input[name="comment"]').value;
+                        const commentInput = document.querySelector('input[name="comment"]');
+                        const comment = commentInput.value.trim(); // Trim whitespace
+
+                        if (!comment) {
+                          // TODO: change the notification method
+                          alert('Please enter your comment.');
+                          commentInput.focus(); // Put cursor in the comment input
+                          return;
+                        }
+                        //const comment = document.querySelector('input[name="comment"]').value;
                         const questionId = document.querySelector('input[name="question_id"]').value;
                         const sessionId = document.querySelector('input[name="session_id"]').value;
 
@@ -209,15 +244,25 @@ block content
                         .then(response => response.json())
                         .then(data => {
                           if (data.success) {
-                              window.location.href = '/question/' + data['question_id'];
+                            const commentRow = document.getElementById('comment-row');
+                            const newParagraph = document.createElement('p');
+                            newParagraph.innerHTML = '<i>' + formatDate() + ' - ' + comment + '</i>';
+                            const existingContent = commentRow.innerHTML;
+                            commentRow.innerHTML = newParagraph.outerHTML + existingContent;
+                            showCallout('comment added', 'success')
                           } else {
-                            console.error('reCAPTCHA verification failed');
+                            showCallout('reCAPTCHA verification failed', 'error')
                           }
                         })
                         .catch(error => {
-                          console.error('Error:', error);
+                          showCallout('reCAPTCHA verification failed', 'error')
                         });
                       }
+                  .row(id='comment-row')
+                    each comment in comments
+                      p 
+                        i !{comment.added_at} - !{comment.comment}
+                    
 
       if false
         each item in media

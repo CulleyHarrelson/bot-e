@@ -16,32 +16,34 @@ router.post('/',
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.render('comment', { title: 'bot-e question comment', errors: errors.array() });
+      console.log("got an error")
     }
     else {
       try {
 
-          const recaptchaToken = req.body["g-recaptcha-response"];
+          const recaptchaToken = req.body["recaptcha_token"];
           const secretKey = process.env.CAPTCHA_SECRET_KEY;
 
-          // Send the token to Google's reCAPTCHA API for verification
           const verificationURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
           const verificationResponse = await axios.post(verificationURL);
 
-          // Check if the verification was successful
           if (verificationResponse.data.success) {
             if (verificationResponse.data.score > 0.5) {
-              const apiResponse = await axios.post('http://127.0.0.1:6464/new_comment', { question_id: req.body.question,  session_id: req.body.session_id, comment: req.body.comment });
-              res.redirect("/question/" + req.body.question);
+              const apiResponse = await axios.post('http://127.0.0.1:6464/add_comment', { question_id: req.body.question_id,  session_id: req.body.session_id, comment: req.body.comment });
+              if (apiResponse.data[0] > 0) {
+                return res.json({ success: true });
+              } else {
+                return res.json({ success: false, error: 'Comment addition failed.' });
+              }
+
             } else {
-              res.render('comment', { title: 'bot-e', errors: ["CAPTCHA verification failed."] });
+              return res.json({ success: false, error: 'CAPTCHA verification failed because of score.' });
             }
           } else {
-              // Handle the failed CAPTCHA verification
-              res.render('comment', { title: 'bot-e', errors: ["CAPTCHA verification failed."] });
+              return res.json({ success: false, error: 'CAPTCHA verification failed.' });
           }
 
       } catch (err) {
-        // Handle error (e.g., API server might be down or there was a network error)
         res.render('comment', { title: 'bot-e', errors: [{msg: 'There was an error sending the comment to the API.'}] });
       }
     }
