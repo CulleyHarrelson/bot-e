@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node-dev ./bin/www"
+    "start": "NODE_ENV=production node ./bin/www",
+    "start:dev": "NODE_ENV=development node-dev ./bin/www"
   },
   "dependencies": {
     "@icon/foundation-icons": "^3.0.0-alpha.3",
@@ -20,6 +21,7 @@
     "pug": "^3.0.2"
   },
   "devDependencies": {
-    "prettier": "3.0.0"
+    "prettier": "3.0.0",
+    "node-dev": "^7.0.1"  
   }
 }

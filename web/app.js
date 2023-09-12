@@ -31,7 +31,6 @@ if (app.get('env') === 'production') {
 
 app.use(session(sess));
 
-// view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 //if (app.get('env') === 'development') {
@@ -84,26 +83,3 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
-
-// this is here until it finds a better place
-function generateRandomKey() {
-  const length = 11;
-  const chars = '-_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  let key = '';
-
-  // Generate the first character
-  const randomIndex = Math.floor(Math.random() * (chars.length - 2)) + 2; // Exclude "_" and "-" from the first character
-  key += chars.charAt(randomIndex);
-
-  // Generate the rest of the characters
-  for (let i = 1; i < length - 1; i++) {
-    const randomIndex = Math.floor(Math.random() * chars.length);
-    key += chars.charAt(randomIndex);
-  }
-
-  // Generate the last character
-  const randomIndexLast = Math.floor(Math.random() * (chars.length - 2)) + 2; // Exclude "_" and "-" from the last character
-  key += chars.charAt(randomIndexLast);
-
-  return key;
-}
