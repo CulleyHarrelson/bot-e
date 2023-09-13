@@ -13,42 +13,12 @@ import warnings
 from PIL import Image
 from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
-import googleapiclient.discovery
-from googleapiclient.errors import HttpError
 from config import OPENAI_API_KEY, POSTGRESQL_KEY
 
 os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
 
 openai.api_key = OPENAI_API_KEY
 pg_password = POSTGRESQL_KEY
-
-
-def search_youtube_videos(search_phrase):
-    youtube = googleapiclient.discovery.build(
-        "youtube", "v3", developerKey=os.environ["YOUTUBE_DATA_API_KEY"]
-    )
-    try:
-        # Perform the YouTube search
-        request = youtube.search().list(
-            q=search_phrase, type="video", part="id,snippet", maxResults=1
-        )
-
-        response = request.execute()
-
-        # Construct the list of dictionaries
-        results = []
-        for item in response.get("items", []):
-            result = {
-                "videoId": item["id"]["videoId"],
-                "thumbnailUrl": item["snippet"]["thumbnails"]["default"]["url"],
-                "title": item["snippet"]["title"],
-            }
-            results.append(result)
-
-        return results
-    except HttpError as e:
-        print(f"An HTTP error occurred: {e}")
-        return []
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -519,13 +489,13 @@ def respond_to_question(conn, cursor, data):
         function_response = json.loads(function_message["function_call"]["arguments"])
         description = function_response["description"]
         media = function_response["media"]
-        if len(media) > 0:
-            for record in media:
-                videos = search_youtube_videos(record["title"])
-                for video in videos:
-                    record["videoId"] = video["videoId"]
-                    record["thumbnailUrl"] = video["thumbnailUrl"]
-                    record["videoTitle"] = video["title"]
+        # if len(media) > 0:
+        #     for record in media:
+        #         videos = search_youtube_videos(record["title"])
+        #         for video in videos:
+        #             record["videoId"] = video["videoId"]
+        #             record["thumbnailUrl"] = video["thumbnailUrl"]
+        #             record["videoTitle"] = video["title"]
 
         if len(title) == 0:
             # if there was a previous title failure....
@@ -620,3 +590,35 @@ if __name__ == "__main__":
     # conn, cursor = db_connect()
     # question = get_question("KiV4OnQED4V", return_json=False)
     # response = respond_to_question(conn, cursor, question)
+
+
+# def search_youtube_videos(search_phrase):
+#     youtube = googleapiclient.discovery.build(
+#         "youtube", "v3", developerKey=os.environ["YOUTUBE_DATA_API_KEY"]
+#     )
+#     try:
+#         # Perform the YouTube search
+#         request = youtube.search().list(
+#             q=search_phrase, type="video", part="id,snippet", maxResults=1
+#         )
+#
+#         response = request.execute()
+#
+#         # Construct the list of dictionaries
+#         results = []
+#         for item in response.get("items", []):
+#             result = {
+#                 "videoId": item["id"]["videoId"],
+#                 "thumbnailUrl": item["snippet"]["thumbnails"]["default"]["url"],
+#                 "title": item["snippet"]["title"],
+#             }
+#             results.append(result)
+#
+#         return results
+#     except HttpError as e:
+#         print(f"An HTTP error occurred: {e}")
+#         return []
+
+
+# import googleapiclient.discovery
+# from googleapiclient.errors import HttpError
