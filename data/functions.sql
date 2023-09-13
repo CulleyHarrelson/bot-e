@@ -157,3 +157,24 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION full_image_url(image_url TEXT)
+RETURNS TEXT AS $$
+DECLARE
+    pg_version TEXT;
+BEGIN
+    -- Get the PostgreSQL version
+    SELECT version() INTO pg_version;
+
+    -- Check if the PostgreSQL version contains "Homebrew"
+    IF position('Homebrew' IN pg_version) > 0 THEN
+        -- If "Homebrew" is found, prepend "http://localhost:3000" to image_url
+        RETURN 'http://localhost:3000' || image_url;
+    ELSE
+        -- If "Homebrew" is not found, prepend "https://bot-e" to image_url
+        RETURN 'https://bot-e' || image_url;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+

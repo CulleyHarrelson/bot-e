@@ -1,0 +1,64 @@
+extends layout
+include mixins
+
+block content
+  +topBar
+  .grid-container
+    .grid-x.grid-margin-x.align-center
+      .cell.small-12.medium-6.margin-top-3
+        h1.cell.small-12= title
+
+        p Thank you for using Bot-E!
+
+        p We want everyone to use our Services safely and responsibly. That’s why we’ve created usage policies that apply to all users of Bot-E’s Services. By following them, you’ll ensure that our Services are used for good.
+
+        p If we discover that your question doesn’t follow these policies, we will remove it from our system. Repeated or serious violations may result in further action.
+
+        p Our policies may change as we learn more about use and abuse of our Services.
+        h4.cell.small-12 Disallowed usage of our Services
+        ul
+          li Illegal activity
+            ul
+              li Bot-E LLC prohibits the use of our Services for illegal activity.
+          li Child Sexual Abuse Material or any content that exploits or harms children
+            ul
+              li We report CSAM to the National Center for Missing and Exploited Children.
+          li Generation of hateful, harassing, or violent content
+            ul 
+              li Content that expresses, incites, or promotes hate based on identity
+              li Content that intends to harass, threaten, or bully an individual
+              li Content that promotes or glorifies violence or celebrates the suffering or humiliation of others
+          li Questions that involve high risk of physical harm, including:
+            ul 
+              li Content that promotes, encourages, or depicts acts of self-harm, such as suicide, cutting, and eating disorders
+              li Weapons development
+              li Military and warfare
+              li Management or operation of critical infrastructure in energy, transportation, and water
+          li Activity that has high risk of economic harm, including:
+            ul 
+              li Multi-level marketing
+              li Gambling
+              li Payday lending
+              li Automated determinations of eligibility for credit, employment, educational institutions, or public assistance services
+          li Fraudulent or deceptive activity, including:
+            ul 
+              li Scams
+              li Coordinated inauthentic behavior
+              li Plagiarism
+              li Academic dishonesty
+              li Astroturfing, such as fake grassroots support or fake review generation
+              li Disinformation
+              li Spam
+              li Pseudo-pharmaceuticals
+          li Adult content, adult industries, and dating apps, including:
+            ul
+              li Content meant to arouse sexual excitement, such as the detailed description of sexual activity, or that promotes sexual services (excluding sex content that is critical to the Input question)
+              li Pornography
+          li Requests for medical advice.
+            ul
+              li Bot-E LLC Services should not be used to triage or manage life-threatening personal issues that need immediate attention, including severe mental health issues.
+          li High risk government decision-making, including:
+            ul
+              li Law enforcement and criminal justice
+              li Migration and asylum
+  +siteFooter

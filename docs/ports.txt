@@ -98,3 +98,27 @@ To run PostgreSQL at startup, add
       status of this software, see the following webpage:
 https://www.postgresql.org/
 root@dt20-pdx:/usr/ports/databases/postgresql15-server #
+
+
+
+
+node.js
+
+
+root@dt20-pdx:/usr/ports/www/node16 # make install
+===>  Installing for node16-16.20.1_1
+===>  Checking if node16 is already installed
+===>   Registering installation for node16-16.20.1_1
+Installing node16-16.20.1_1...
+Note: If you need npm (Node Package Manager), please install www/npm.
+===>   NOTICE:
+
+This port is deprecated; you may wish to reconsider installing it:
+
+Upstream EOL reaches on 2023-09-11.
+
+It is scheduled to be removed on or after 2023-09-30.
+
+
+root@dt20-pdx:/usr/ports/www/node16 #
+

@@ -214,7 +214,7 @@ def search(search_for):
     conn, cursor = db_connect()
 
     cursor.execute(
-        "select question_id, question, answer, image_url, media, title, description, added_at from search(%s)",
+        "select question_id, question, answer, full_image_url(image_url) AS image_url, media, title, description, added_at from search(%s)",
         (search_for,),
     )
     questions = cursor.fetchall()
@@ -256,7 +256,7 @@ def get_questions(question_ids):
     ]
 
     cursor.execute(
-        "select question_id, question, answer, image_url, media, title, description, added_at from question where question_id = ANY(%s)",
+        "select question_id, question, answer, full_image_url(image_url) AS image_url, media, title, description, added_at from question where question_id = ANY(%s)",
         (valid_question_ids,),
     )
     questions = cursor.fetchall()
@@ -307,7 +307,7 @@ def simplified_question(question_id):
         return json.dumps([])
 
     cursor.execute(
-        "SELECT question_id, question, answer, image_url, media, title, description, added_at FROM question WHERE question_id = %s",
+        "SELECT question_id, question, answer, full_image_url(image_url) AS image_url, media, title, description, added_at FROM question WHERE question_id = %s",
         (question_id,),
     )
     question = cursor.fetchone()
@@ -595,9 +595,8 @@ def stability_image(title, question_id):
     for resp in answers:
         for artifact in resp.artifacts:
             if artifact.finish_reason == generation.FILTER:
-                warnings.warn(
+                raise ValueError(
                     "Your request activated the API's safety filters and could not be processed."
-                    "Please modify the prompt and try again."
                 )
             if artifact.type == generation.ARTIFACT_IMAGE:
                 img = Image.open(io.BytesIO(artifact.binary))

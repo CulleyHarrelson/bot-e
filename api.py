@@ -37,10 +37,8 @@ def custom_json_serializer(obj):
 @app.route("/list/<array_of_ids>", methods=["GET"])
 def get_rows_by_ids(array_of_ids):
     try:
-        # Split the provided array_of_ids into a list of individual ids
         ids_list = array_of_ids.split(",")
 
-        # Get the rows from the database
         return bote.get_questions(ids_list)
 
     except Exception as e:
@@ -56,13 +54,11 @@ def trending(start_date):
             raise BadRequest(
                 "Invalid date format. Please use ISO 8601 format (YYYY-MM-DD)."
             )
-        # Verify that the parsed dates are valid
         if not isinstance(start_date_parsed, datetime):
             raise ValueError("Invalid date format")
 
         current_date = datetime.now()
 
-        # Verify that the parsed dates are valid
         if not isinstance(start_date_parsed, datetime):
             raise ValueError("Invalid date format")
 
@@ -89,7 +85,11 @@ def get_question_by_id(question_id):
     try:
         # Get the rows from the database
         question = bote.simplified_question(question_id)
-        return question
+
+        response = jsonify(question)
+        response.headers["Content-Type"] = "application/json"
+
+        return response
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -104,7 +104,6 @@ def next_question():
     the random button
     """
     try:
-        # print(request.json["session_id"])
         direction = request.json["direction"]
         question_id = request.json["question_id"]
         session_id = request.json["session_id"]
@@ -127,16 +126,13 @@ def next_question():
 @app.route("/ask", methods=["POST"])
 def post_question():
     try:
-        # Get the question text from the request's JSON body
         data = request.get_json()
 
-        # Check if the "question" field is present and not empty
         if "question" not in data or not data["question"]:
             return jsonify({"error": "question is required."}), 400
 
         question = data["question"]
 
-        # Process the question using bote or any other necessary method
         question = bote.post_question(question)
         return question
 
@@ -147,10 +143,8 @@ def post_question():
 @app.route("/add_comment", methods=["POST"])
 def add_comment():
     try:
-        # Get the question text from the request's JSON body
         data = request.get_json()
 
-        # Check if the "question" field is present and not empty
         if "question_id" not in data or not data["question_id"]:
             return jsonify({"error": "question_id is required."}), 400
 

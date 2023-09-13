@@ -5,7 +5,7 @@ var axios = require('axios');  // <-- Require axios
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'bot-e', description: 'bot-e: advice column 2.0.  What\'s going on?', canonical: 'https://bot-e/' });
+  res.render('index', { title: 'Bot-E', description: 'Bot-E: advice column 2.0.  What\'s going on?', canonical: 'https://bot-e/' });
 });
 
 /* POST home page. */
@@ -18,7 +18,7 @@ router.post('/',
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       // There are errors. Render the form again with sanitized values and error messages.
-      res.render('index', { title: 'bot-e', errors: errors.array() });
+      res.render('index', { title: 'Bot-E', errors: errors.array() });
     }
     else {
       try {
@@ -38,16 +38,16 @@ router.post('/',
               const apiResponse = await axios.post('http://127.0.0.1:6464/ask', { question: req.body.question });
               res.redirect("/question/" + apiResponse.data['question_id']);
             } else {
-              res.render('index', { title: 'bot-e', errors: ["CAPTCHA verification failed."] });
+              res.render('index', { title: 'Bot-E', errors: ["CAPTCHA verification failed."] });
             }
           } else {
               // Handle the failed CAPTCHA verification
-              res.render('index', { title: 'bot-e', errors: ["CAPTCHA verification failed."] });
+              res.render('index', { title: 'Bot-E', errors: ["CAPTCHA verification failed."] });
           }
 
       } catch (err) {
         // Handle error (e.g., API server might be down or there was a network error)
-        res.render('index', { title: 'bot-e', errors: [{msg: 'There was an error sending the question to the API.'}] });
+        res.render('index', { title: 'Bot-E', errors: [{msg: 'There was an error sending the question to the API.'}] });
       }
     }
 });

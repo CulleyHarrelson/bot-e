@@ -118,6 +118,15 @@ AFTER INSERT ON question
 FOR EACH ROW
 EXECUTE FUNCTION notify_new_question();
 
+CREATE OR REPLACE FUNCTION update_modified_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Update the "modified_at" column with the current timestamp
+  NEW.modified_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TRIGGER update_modified_at_trigger
 BEFORE UPDATE ON question
 FOR EACH ROW
@@ -156,30 +165,4 @@ CREATE INDEX idx_question_comment_parent ON question_comment (parent_comment_id)
 CREATE INDEX idx_question_comment_date ON question_comment (added_at);
 CREATE INDEX idx_question_comment_session ON question_comment (session_id);
 
--- Create a function to perform the check
-CREATE OR REPLACE FUNCTION check_parent_question_id()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Check if parent_comment_id is not null
-  IF NEW.parent_comment_id IS NOT NULL THEN
-    -- Fetch the question_id associated with the parent_comment_id
-    SELECT question_id INTO NEW.question_id
-    FROM question_comment
-    WHERE comment_id = NEW.parent_comment_id;
-
-    -- Check if the fetched question_id is not the same as NEW.question_id
-    IF NEW.question_id <> OLD.question_id THEN
-      RAISE EXCEPTION 'The parent_comment_id does not belong to the same question.';
-    END IF;
-  END IF;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Create the trigger
-CREATE TRIGGER check_parent_question_id_trigger
-BEFORE INSERT ON question_comment
-FOR EACH ROW
-EXECUTE FUNCTION check_parent_question_id();
 
