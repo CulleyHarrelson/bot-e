@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/local/bin/python
 
 import psycopg2
 import psycopg2.extensions
