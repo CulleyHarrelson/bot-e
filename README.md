@@ -8,16 +8,18 @@
     - do not refresh page
 - change image_url to use full domain
 - Build Server
-    - Node.js
+    - Node.js DONE
+    - nginx
         -SSL certificate
     - Postgresql - DONE
         - pgVector - DONE
         - backups
-    - Python 3.9 .venv
+    - Python 3.9 
+        - openAI - stuck on gcc12
         - Flask/Gunicorn
         - bot-e Daemon
             - logging
-            - images
+            - Supervisor
 - Transfer domain
     - Oct 4
 - Add LLC stuff

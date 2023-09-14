@@ -2,7 +2,6 @@ from flask import Flask, jsonify, request
 import bote
 from datetime import datetime
 from dateutil.parser import isoparse
-import json
 from flask_cors import CORS
 from werkzeug.exceptions import BadRequest
 from html import unescape
@@ -34,6 +33,7 @@ def custom_json_serializer(obj):
     raise TypeError("Type not serializable")
 
 
+# this isn't called yet
 @app.route("/list/<array_of_ids>", methods=["GET"])
 def get_rows_by_ids(array_of_ids):
     try:
@@ -56,8 +56,6 @@ def trending(start_date):
             )
         if not isinstance(start_date_parsed, datetime):
             raise ValueError("Invalid date format")
-
-        current_date = datetime.now()
 
         if not isinstance(start_date_parsed, datetime):
             raise ValueError("Invalid date format")
@@ -101,7 +99,8 @@ def next_question():
     this route is for the navigation on the question page. data is
     saved to question_vote table and the embeddings is used for a
     proximity search, or a random question is returned if they hit
-    the random button
+    the random button.  Functionality could be split into vote and navigation
+    methods
     """
     try:
         direction = request.json["direction"]

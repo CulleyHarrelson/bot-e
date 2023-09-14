@@ -122,3 +122,68 @@ It is scheduled to be removed on or after 2023-09-30.
 
 root@dt20-pdx:/usr/ports/www/node16 #
 
+
+
+
+
+Message from nginx-1.24.0_6,3:
+
+--
+Recent version of the NGINX introduces dynamic modules support.  In
+FreeBSD ports tree this feature was enabled by default with the DSO
+knob.  Several vendor's and third-party modules have been converted
+to dynamic modules.  Unset the DSO knob builds an NGINX without
+dynamic modules support.
+
+To load a module at runtime, include the new `load_module'
+directive in the main context, specifying the path to the shared
+object file for the module, enclosed in quotation marks.  When you
+reload the configuration or restart NGINX, the module is loaded in.
+It is possible to specify a path relative to the source directory,
+or a full path, please see
+https://www.nginx.com/blog/dynamic-modules-nginx-1-9-11/ and
+http://nginx.org/en/docs/ngx_core_module.html#load_module for
+details.
+
+Default path for the NGINX dynamic modules is
+
+/usr/local/libexec/nginx.
+
+
+
+
+Message from py39-certbot-2.6.0,1:
+
+--
+This port installs the "standalone" client only, which does not use and
+is not the certbot-auto bootstrap/wrapper script.
+
+The simplest form of usage to obtain certificates is:
+
+ # sudo certbot certonly --standalone -d <domain>, [domain2, ... domainN]>
+
+NOTE:
+
+The client requires the ability to bind on TCP port 80 or 443 (depending
+on the --preferred-challenges option used). If a server is running on that
+port, it will need to be temporarily stopped so that the standalone server
+can listen on that port to complete the challenge authentication process.
+
+For more information on the 'standalone' mode, see:
+
+  https://certbot.eff.org/docs/using.html#standalone
+
+The certbot plugins to support apache and nginx certificate installation
+will be made available in the following ports:
+
+ * Apache plugin: security/py-certbot-apache
+ * Nginx plugin: security/py-certbot-nginx
+
+In order to automatically renew the certificates, add this line to
+/etc/periodic.conf:
+
+    weekly_certbot_enable="YES"
+
+More config details in the certbot periodic script:
+
+    /usr/local/etc/periodic/weekly/500.certbot-3.9

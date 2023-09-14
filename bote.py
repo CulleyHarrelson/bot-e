@@ -13,12 +13,11 @@ import warnings
 from PIL import Image
 from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
-from config import OPENAI_API_KEY, POSTGRESQL_KEY
+from config import OPENAI_API_KEY
 
 os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
 
 openai.api_key = OPENAI_API_KEY
-pg_password = POSTGRESQL_KEY
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -38,9 +37,6 @@ def db_connect():
     conn = psycopg2.connect(
         host="localhost",
         dbname="bot-e",
-        # host="bot-e.cluster-chki9sxssda8.us-east-2.rds.amazonaws.com",
-        # user="postgres",
-        # password=f"{pg_password}",
         port="5432",
     )
     cursor = conn.cursor(cursor_factory=DictCursor)
