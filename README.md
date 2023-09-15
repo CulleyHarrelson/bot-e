@@ -82,3 +82,39 @@ mindmap
 - execute data/schema.sql
 - execute data/functions.sql
 
+## Website setup
+
+The code anticipates the development version of node.js is running on port 3000
+use npm to install the packages in bot-e/web/packages.json and use npm start
+to start the dev server.
+
+## API setup
+
+The express app expects an api server at localhost:6464 
+Setup commands:
+
+```
+cd bot-e
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python api.py
+# when testing gunicorn 
+# gunicorn -b localhost:6464 --reload api:app
+```
+
+## Bot-E Daemon
+
+In development, a long-running python process is needed to 
+execute the api calls when question new records are inserted into the database. 
+To start this process run these commands:
+
+```
+cd bot-e
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+./bote.py
+```
+
+

@@ -57,6 +57,24 @@ app.use('/navigate', navigateRouter);
 app.use('/trending', trendingRouter);
 app.use('/comment', commentRouter);
 
+// Middleware to set api_host based on environment
+app.use(function(req, res, next) {
+  if (app.get('env') === 'production') {
+    req.api_host = 'https://snowball.bot-e.com/';
+  } else {
+    req.api_host = 'http://localhost:6464';
+  }
+  next();
+});
+
+// Your route handlers can now access req.api_host
+app.get('/api/some_route', function(req, res) {
+  // You can access req.api_host here
+  var api_url = 'http://' + req.api_host + '/api/endpoint';
+  // ...
+});
+
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
