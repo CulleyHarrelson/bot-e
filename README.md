@@ -79,6 +79,9 @@ mindmap
 
 - install Postgresql
 - install pgVector
+```
+createdb bot-e
+```
 - execute data/schema.sql
 - execute data/functions.sql
 
