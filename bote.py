@@ -550,7 +550,7 @@ def stability_image(title, question_id):
     )
 
     answers = stability_api.generate(
-        prompt=f"using mostly dark tones create an image that will make people curious about this title: '{title}'. ",
+        prompt=f"using two complimentary colors, create an image that will make people curious about this title: '{title}'. ",
         seed=4253978046,
         steps=30,
         cfg_scale=7.0,

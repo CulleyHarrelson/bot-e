@@ -23,13 +23,14 @@ router.post('/',
 
           const recaptchaToken = req.body["recaptcha_token"];
           const secretKey = process.env.CAPTCHA_SECRET_KEY;
+          const apiServer = req.app.locals.apiServer;
 
           const verificationURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
           const verificationResponse = await axios.post(verificationURL);
 
           if (verificationResponse.data.success) {
             if (verificationResponse.data.score > 0.5) {
-              const apiResponse = await axios.post('http://127.0.0.1:6464/add_comment', { question_id: req.body.question_id,  session_id: req.body.session_id, comment: req.body.comment });
+              const apiResponse = await axios.post(`${apiServer}/add_comment`, { question_id: req.body.question_id,  session_id: req.body.session_id, comment: req.body.comment });
               if (apiResponse.data[0] > 0) {
                 return res.json({ success: true });
               } else {

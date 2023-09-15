@@ -4,7 +4,9 @@ const axios = require('axios');
 
 router.get('/:search_for', function(req, res, next) {
   const search_for = req.params.search_for;
-  axios.get(`http://localhost:6464/search/${search_for}`)
+
+  const apiServer = req.app.locals.apiServer;
+  axios.get(`${apiServer}/search/${search_for}`)
     .then(response => {
       const questionDetailsList = response.data; // Assuming the response contains a list of question details
       const questions = [];

@@ -27,6 +27,7 @@ router.post('/',
         const session_id = req.sessionID
         const direction = req.body["direction"];
         const secretKey = process.env.CAPTCHA_SECRET_KEY;
+        const apiServer = req.app.locals.apiServer;
 
         // Send the token to Google's reCAPTCHA API for verification
         const verificationURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
@@ -36,7 +37,7 @@ router.post('/',
         if (verificationResponse.data.success) {
           if (verificationResponse.data.score > 0.5) {
             post_data = { question_id: question_id, session_id: session_id, direction: direction };
-            const apiResponse = await axios.post('http://127.0.0.1:6464/next_question', post_data);
+            const apiResponse = await axios.post(`${apiServer}/next_question`, post_data);
             res.json({ success: true, question_id: apiResponse.data['question_id'] });
           } else {
             res.json({ success: false });

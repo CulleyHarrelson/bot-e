@@ -8,12 +8,14 @@ router.get('/:question_id', async function(req, res, next) {
     const questionId = req.params.question_id;
     const sessionId = req.sessionID;
 
+    const apiServer = req.app.locals.apiServer;
+
     // Make the first request to get question details
-    const questionDetailsResponse = await axios.get(`http://localhost:6464/question/${questionId}`);
+    const questionDetailsResponse = await axios.get(`${apiServer}/question/${questionId}`);
     const questionDetails = questionDetailsResponse.data; // Assuming the response contains the question details
 
     // Make the second request to get comments data
-    const commentsResponse = await axios.get(`http://localhost:6464/comments/${questionId}`);
+    const commentsResponse = await axios.get(`${apiServer}/comments/${questionId}`);
     const comments = commentsResponse.data; // Assuming the response contains comments data
 
     // Process and format the data as needed

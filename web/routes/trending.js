@@ -4,7 +4,8 @@ const axios = require('axios');
 
 router.get('/:start_date', function(req, res, next) {
   const start_date = req.params.start_date;
-  axios.get(`http://localhost:6464/trending/${start_date}`)
+  const apiServer = req.app.locals.apiServer;
+  axios.get(`${apiServer}/trending/${start_date}`)
     .then(response => {
       const questionDetailsList = response.data; 
       const questions = [];

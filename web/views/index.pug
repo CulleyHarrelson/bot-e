@@ -14,6 +14,7 @@ block meta
           });
       });
 
+
 block content
 
   +topBar
@@ -26,4 +27,14 @@ block content
         textarea(name="question", required, style="height: 200px; width: 100%;")
         div#recaptcha
         button.button.large.success(type="submit") Get Advice
+  if errors
+    script.
+      const notice = document.createElement('div');
+      notice.textContent = `#{errors}`;
+      notice.classList.add('callout', 'alert');
+      document.body.appendChild(notice);
+
+      setTimeout(() => {
+        document.body.removeChild(notice);
+      }, 3000); // Remove notice after 3 seconds
   +siteFooter
