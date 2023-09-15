@@ -38,8 +38,12 @@ router.post('/',
             if (verificationResponse.data.score > 0.5) {
               //console.log("step 6")
               //console.log("reCAPTCHA Score:", verificationResponse.data.score);
-              const apiResponse = await axios.post(`${apiServer}/ask`, { question: req.body.question });
-              res.redirect("/question/" + apiResponse.data['question_id']);
+              try {
+                const apiResponse = await axios.post(`${apiServer}/ask`, { question: req.body.question });
+                res.redirect("/question/" + apiResponse.data['question_id']);
+              } catch (err) {
+                res.render('index', { title: 'Bot-E', errors: [err] });
+              }
             } else {
               res.render('index', { title: 'Bot-E', errors: ["CAPTCHA verification failed."] });
             }

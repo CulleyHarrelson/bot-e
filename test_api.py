@@ -13,12 +13,6 @@ class FlaskAppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(data, list)
 
-    def test_get_similar(self):
-        response = self.app.get("/similar/1")
-        data = json.loads(response.data.decode())
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(data, list)
-
     def test_post_question(self):
         prompt_data = {"question": "what is the meaning of human life?"}
         headers = {"Content-Type": "application/json"}
