@@ -89,7 +89,11 @@ createdb bot-e
 
 The code anticipates the development version of node.js is running on port 3000
 use npm to install the packages in bot-e/web/packages.json and use npm start
-to start the dev server.
+to start the dev server. a symbolic link is required
+
+```
+ln -s images/questions web/public/images/questions
+```
 
 ## API setup
 

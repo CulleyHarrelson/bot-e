@@ -173,7 +173,7 @@ BEGIN
         RETURN 'http://localhost:3000' || image_url;
     ELSE
         -- If "Homebrew" is not found, prepend "https://bot-e" to image_url
-        RETURN 'https://bot-e' || image_url;
+        RETURN 'https://bot-e.com' || image_url;
     END IF;
 END;
 $$ LANGUAGE plpgsql;
