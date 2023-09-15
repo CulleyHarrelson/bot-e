@@ -9,7 +9,10 @@ import re
 
 app = Flask(__name__)
 
-CORS(app, origins=["https://bot-e.com", "http://localhost:3000"])
+CORS(
+    app,
+    origins=["https://bot-e.com", "http://localhost:3000", "http://snowball.bot-e.com"],
+)
 
 
 def contains_html(input_string):
