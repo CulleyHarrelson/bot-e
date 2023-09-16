@@ -2,7 +2,7 @@ var createError = require('http-errors');
 var express = require('express');
 var session = require('express-session');
 var path = require('path');
-var cookieParser = require('cookie-parser');
+//var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
@@ -17,18 +17,20 @@ var navigateRouter = require('./routes/navigate');
 var trendingRouter = require('./routes/trending');
 var commentRouter = require('./routes/comment');
 
+const port = process.env.PORT || 3000;
+
 var app = express();
 
 const sess = {
   secret: 'keyboard cat',
   resave: false, // Set to false to avoid the deprecated warning
   saveUninitialized: true, // Set to true or false as needed
-  cookie: {}
+  //cookie: {}
 };
 
 if (app.get('env') === 'production') {
   app.set('trust proxy', 1); // trust first proxy
-  sess.cookie.secure = true; // serve secure cookies
+  //sess.cookie.secure = true; // serve secure cookies
   app.locals.apiServer = 'http://snowball.bot-e.com'
 } else {
   app.locals.pretty = true;
@@ -43,7 +45,7 @@ app.set('view engine', 'pug');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+//app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
@@ -84,6 +86,11 @@ app.use(function(err, req, res, next) {
   // Render the error page with axiosErrorMessage as a variable
   res.status(err.status || 500);
   res.render('error', { axiosErrorMessage }); // Pass axiosErrorMessage to the template
+});
+
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
 
 module.exports = app;
