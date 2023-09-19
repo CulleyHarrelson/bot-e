@@ -16,7 +16,10 @@ from PIL import Image
 from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 from config import OPENAI_API_KEY
+import asyncpg
+import asyncio
 
+pool = None
 os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
 
 openai.api_key = OPENAI_API_KEY
@@ -45,37 +48,33 @@ def db_connect():
     return conn, cursor
 
 
-def new_question(conn, cursor, question):
+async def create_db_pool():
+    global pool
+    if pool is None:
+        pool = await asyncpg.create_pool(
+            host="localhost",
+            database="bot-e",
+            port=5432,
+        )
+    return pool
+
+
+async def db_connect2():
+    pool = await create_db_pool()
+    return await pool.acquire()
+
+
+async def new_question(conn, question):
     question = question.strip()
     if len(question) < 1:
         return {}
-    # insert a new question record and get back the question_id
-    cursor.execute(
-        "INSERT INTO question (question) VALUES (%s) RETURNING *", (question,)
-    )
-    conn.commit()
-    result_tuple = cursor.fetchone()
 
-    column_names = [desc[0] for desc in cursor.description]
-    result_dict = dict(zip(column_names, result_tuple))
+    async with conn.transaction():
+        result = await conn.fetchrow(
+            "INSERT INTO question (question) VALUES ($1) RETURNING *", question
+        )
 
-    return result_dict
-
-
-def next_embedding(cursor):
-    # this returns an question record that is in need of embedding
-    cursor.execute(
-        "SELECT * FROM question WHERE embedding IS NULL ORDER BY added_at LIMIT 1;"
-    )
-    return cursor.fetchone()
-
-
-def next_moderation(cursor):
-    # this returns an question record that is in need of moderation
-    cursor.execute(
-        "SELECT * FROM question WHERE moderation IS NULL ORDER BY added_at LIMIT 1;"
-    )
-    return cursor.fetchone()
+    return dict(result)
 
 
 def answer_next(cursor):
@@ -113,15 +112,23 @@ def respond():
             question = answer_next(cursor)
 
 
-def post_question(question):
-    conn, cursor = db_connect()
-    question = new_question(conn, cursor, question)
-    embed_question(conn, cursor, question)
-    moderate_question(conn, cursor, question)
+async def annotate_question(conn, question):
+    moderation = moderation_api(question["question"])
+    embedding = embedding_api(question["question"])
+    async with conn.transaction():
+        await conn.execute(
+            "UPDATE question SET moderation = $1, embedding = $2 WHERE question_id = $3",
+            json.dumps(moderation),
+            json.dumps(embedding),
+            question["question_id"],
+        )
 
-    cursor.close()
-    conn.close()
-    return question
+
+async def post_question(question):
+    conn = await db_connect2()
+    question_record = await new_question(conn, question)
+    await annotate_question(conn, question_record)
+    return question_record
 
 
 def add_comment(question_id, comment, session_id):
@@ -140,7 +147,6 @@ def add_comment(question_id, comment, session_id):
         )
         conn.commit()
         result_tuple = cursor.fetchone()
-        # moderate_question(conn, cursor, question)
 
         cursor.close()
         conn.close()
@@ -215,29 +221,6 @@ def trending(start_date):
     return json_response
 
 
-def get_questions(question_ids):
-    conn, cursor = db_connect()
-
-    # Filter out invalid question_ids
-    valid_question_ids = [
-        question_id for question_id in question_ids if validate_key(question_id)
-    ]
-
-    cursor.execute(
-        "select question_id, question, answer, full_image_url(image_url) AS image_url, media, title, description, added_at from question where question_id = ANY(%s)",
-        (valid_question_ids,),
-    )
-    questions = cursor.fetchall()
-    # Convert the rows to a list of dictionaries
-    columns = [desc[0] for desc in cursor.description]
-    data = [dict(zip(columns, row)) for row in questions]
-
-    cursor.close()
-    conn.close()
-    json_response = json.dumps(data, default=custom_json_serializer)
-    return json_response
-
-
 def get_question(question_id, return_json=True):
     conn, cursor = db_connect()
 
@@ -265,77 +248,96 @@ def get_question(question_id, return_json=True):
         return data
 
 
-def simplified_question(question_id):
+async def simplified_question(question_id):
     """
     suface limited data to api
     """
-    conn, cursor = db_connect()
+    conn = await db_connect2()
 
     if not validate_key(question_id):
         return json.dumps([])
 
-    cursor.execute(
-        "SELECT question_id, question, answer, full_image_url(image_url) AS image_url, media, title, description, added_at FROM question WHERE question_id = %s",
-        (question_id,),
-    )
-    question = cursor.fetchone()
-    cursor.close()
-    conn.close()
+    query = """
+        SELECT 
+            question_id, 
+            question, 
+            answer, 
+            full_image_url(image_url) AS image_url, 
+            media, 
+            title, 
+            description, 
+            TO_CHAR(added_at, 'YYYY-MM-DD HH24:MI:SS') AS added_at
+        FROM question
+        WHERE question_id = $1
+        """
+
+    async with conn.transaction():
+        question = await conn.fetchrow(query, question_id)
 
     if not question:
         return json.dumps([])
 
-    columns = [desc[0] for desc in cursor.description]
-    data = dict(zip(columns, question))
+    data = dict(question)
     return data
 
 
-def question_comments(question_id):
+async def question_comments(question_id):
     # TODO: moderate this
-    conn, cursor = db_connect()
+    conn = await db_connect2()
 
     if not validate_key(question_id):
         return json.dumps([])
 
-    cursor.execute(
-        "SELECT question_id, comment, session_id, parent_comment_id, comment_id, TO_CHAR(added_at, 'YYYY-MM-DD HH:MI AM') AS added_at FROM question_comment WHERE question_id = %s order by added_at desc limit 100",
-        (question_id,),
-    )
+    query = """
+        SELECT
+            question_id,
+            comment,
+            session_id,
+            parent_comment_id,
+            comment_id,
+            TO_CHAR(added_at, 'YYYY-MM-DD HH:MI AM') AS added_at
+        FROM question_comment
+        WHERE question_id = $1
+        ORDER BY added_at DESC
+        LIMIT 100
+        """
+    try:
+        async with conn.transaction():
+            comments = await conn.fetch(query, question_id)
 
-    comments = cursor.fetchall()
-    # Convert the rows to a list of dictionaries
-    columns = [desc[0] for desc in cursor.description]
-    data = [dict(zip(columns, row)) for row in comments]
+        if not comments:
+            return []
 
-    cursor.close()
-    conn.close()
-    json_response = json.dumps(data, default=custom_json_serializer)
-    return json_response
+        comments_list = [dict(comment) for comment in comments]
 
-
-def random_question():
-    conn, cursor = db_connect()
-
-    cursor.execute(
-        "SELECT * FROM question ORDER BY RANDOM() LIMIT 1",
-    )
-    question = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    if not question:
+        return comments_list
+    except Exception as e:
         return json.dumps([])
-
-    columns = [desc[0] for desc in cursor.description]
-    data = dict(zip(columns, question))
-
-    return data
+    finally:
+        await conn.close()
 
 
-def next_question(question_id, session_id, direction):
-    conn, cursor = db_connect()
+async def random_question():
+    conn = await db_connect2()  # Assuming db_connect2 is your async connection function
 
-    # Filter out invalid question_ids
+    try:
+        query = "SELECT * FROM question ORDER BY RANDOM() LIMIT 1"
+        question = await conn.fetchrow(query)  # fetchrow returns a single record
+
+        if not question:
+            return []
+
+        return dict(question)  # Convert the record to a dictionary
+
+    except Exception as e:
+        return []
+    finally:
+        await conn.close()
+
+
+async def next_question(question_id, session_id, direction):
+    conn = await db_connect2()  # Assuming db_connect2 is your async connection function
+
     if not validate_key(question_id):
         return "[]"
 
@@ -344,82 +346,24 @@ def next_question(question_id, session_id, direction):
     else:
         similarity = True
 
-    cursor.execute(
-        "select * from proximal_question(%s, %s, %s)",
-        (question_id, session_id, similarity),
-    )
+    try:
+        query = "select * from proximal_question($1, $2, $3)"
+        question = await conn.fetchrow(query, question_id, session_id, similarity)
 
-    question = cursor.fetchone()
-    conn.commit()
-    cursor.close()
-    conn.close()
+        if not question:
+            return []
 
-    if not question:
-        return json.dumps([])
+        return dict(question)  # Convert the record to a dictionary
 
-    columns = [desc[0] for desc in cursor.description]
-    data = dict(zip(columns, question))
-
-    return data
-
-
-def moderate_questions():
-    conn, cursor = db_connect()
-    while True:
-        question = next_moderation(cursor)
-        if question is None:
-            break
-
-        moderation = moderation_api(question["question"])
-        cursor.execute(
-            "update question set moderation = %s where question_id = %s",
-            (json.dumps(moderation), question["question_id"]),
-        )
-        conn.commit()
-        # time.sleep(0.8)
-    conn.close()
-    cursor.close()
+    except Exception as e:
+        return []
+    finally:
+        await conn.close()
 
 
 def embedding_api(input_text):
     response = openai.Embedding.create(input=input_text, model="text-embedding-ada-002")
     return response["data"][0]["embedding"]
-
-
-def embed_question(conn, cursor, question):
-    embedding = embedding_api(question["question"])
-    cursor.execute(
-        "update question set embedding = %s where question_id = %s",
-        (embedding, question["question_id"]),
-    )
-    conn.commit()
-
-
-def moderate_question(conn, cursor, question):
-    moderation = moderation_api(question["question"])
-    cursor.execute(
-        "update question set moderation = %s where question_id = %s",
-        (json.dumps(moderation), question["question_id"]),
-    )
-    conn.commit()
-
-
-def embed_questions():
-    conn, cursor = db_connect()
-    while True:
-        question = next_embedding(cursor)
-        if question is None:
-            break
-
-        embedding = embedding_api(question["question"])
-        cursor.execute(
-            "update question set embedding = %s where question_id = %s",
-            (embedding, question["question_id"]),
-        )
-        conn.commit()
-        # time.sleep(0.8)
-    conn.close()
-    cursor.close()
 
 
 def respond_to_question(conn, cursor, data):
@@ -515,6 +459,7 @@ def respond_to_question(conn, cursor, data):
         )
         conn.commit()
 
+    # TODO: change this to simplified_question()
     return get_question(question_id)
 
 
@@ -584,7 +529,6 @@ def stability_image(title, question_id):
 
 if __name__ == "__main__":
     respond()
-    # embed_questions()
     # conn, cursor = db_connect()
     # question = get_question("KiV4OnQED4V", return_json=False)
     # response = respond_to_question(conn, cursor, question)
@@ -620,3 +564,109 @@ if __name__ == "__main__":
 
 # import googleapiclient.discovery
 # from googleapiclient.errors import HttpError
+
+# TODO get this working in cron regularly
+# def moderate_questions():
+#    conn, cursor = db_connect()
+#    while True:
+#        question = next_moderation(cursor)
+#        if question is None:
+#            break
+#
+#        moderation = moderation_api(question["question"])
+#        cursor.execute(
+#            "update question set moderation = %s where question_id = %s",
+#            (json.dumps(moderation), question["question_id"]),
+#        )
+#        conn.commit()
+#    conn.close()
+#    cursor.close()
+
+# def moderate_question(conn, cursor, question):
+#    moderation = moderation_api(question["question"])
+#    cursor.execute(
+#        "update question set moderation = %s where question_id = %s",
+#        (json.dumps(moderation), question["question_id"]),
+#    )
+#    conn.commit()
+
+# def new_question(conn, cursor, question):
+#    question = question.strip()
+#    if len(question) < 1:
+#        return {}
+#    # insert a new question record and get back the question_id
+#    cursor.execute(
+#        "INSERT INTO question (question) VALUES (%s) RETURNING *", (question,)
+#    )
+#    conn.commit()
+#    result_tuple = cursor.fetchone()
+#
+#    column_names = [desc[0] for desc in cursor.description]
+#    result_dict = dict(zip(column_names, result_tuple))
+#
+#    return result_dict
+
+# def get_questions(question_ids):
+#    conn, cursor = db_connect()
+#
+#    # Filter out invalid question_ids
+#    valid_question_ids = [
+#        question_id for question_id in question_ids if validate_key(question_id)
+#    ]
+#
+#    cursor.execute(
+#        "select question_id, question, answer, full_image_url(image_url) AS image_url, media, title, description, added_at from question where question_id = ANY(%s)",
+#        (valid_question_ids,),
+#    )
+#    questions = cursor.fetchall()
+#    # Convert the rows to a list of dictionaries
+#    columns = [desc[0] for desc in cursor.description]
+#    data = [dict(zip(columns, row)) for row in questions]
+#
+#    cursor.close()
+#    conn.close()
+#    json_response = json.dumps(data, default=custom_json_serializer)
+#    return json_response
+
+
+# def next_embedding(cursor):
+#    # this returns an question record that is in need of embedding
+#    cursor.execute(
+#        "SELECT * FROM question WHERE embedding IS NULL ORDER BY added_at LIMIT 1;"
+#    )
+#    return cursor.fetchone()
+#
+#
+# def next_moderation(cursor):
+#    # this returns an question record that is in need of moderation
+#    cursor.execute(
+#        "SELECT * FROM question WHERE moderation IS NULL ORDER BY added_at LIMIT 1;"
+#    )
+#    return cursor.fetchone()
+
+# def embed_question(conn, cursor, question):
+#    embedding = embedding_api(question["question"])
+#    cursor.execute(
+#        "update question set embedding = %s where question_id = %s",
+#        (embedding, question["question_id"]),
+#    )
+#    conn.commit()
+#
+#
+## TODO put this on a cron job
+# def embed_questions():
+#    conn, cursor = db_connect()
+#    while True:
+#        question = next_embedding(cursor)
+#        if question is None:
+#            break
+#
+#        embedding = embedding_api(question["question"])
+#        cursor.execute(
+#            "update question set embedding = %s where question_id = %s",
+#            (embedding, question["question_id"]),
+#        )
+#        conn.commit()
+#        # time.sleep(0.8)
+#    conn.close()
+#    cursor.close()

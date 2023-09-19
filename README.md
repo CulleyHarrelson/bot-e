@@ -25,6 +25,11 @@
 - Add LLC stuff
 - Email Marketing
     - capture email addresses?
+- review ai image/video tools:
+    - https://cloudinary.com/products/programmable_media
+    - https://imagekit.io/
+    - https://imgix.com/
+    - https://elevenlabs.io/
 
 Backlog:
     - Flutter App
@@ -46,32 +51,55 @@ Mind Map
 ```
 mindmap
   root((bot-e))
+    APIs
+        OpenAI
+        Stability.ai
+        reCAPTCHA
+        YouTube
+        Instagram
+        TikTok
+    Social Networks
+        Reels
+            Instagram
+            TikTok
+            YouTube
+        Image Meme
+            Instagram
+            Facebook
+            YouTube
+            TikTok
+        LinkedIn
     Flutter
         iOS
         Android
         Web App
         Desktop Apps
-    FreeBSD
-        Email Server
-            Newsletter
+    FreeBSD Server Farm
         Postgresql
             pgVector
             full text search
         bot-e Daemond
+            asyncpg
             Prompt Engineering
                 advice
+            Image Generation
         Varnish Cache
-            Flask/Gunicorn API
-                Flutter/MVP Endpoint
-                    Browse/Search
-                New Question
-                    OpenAI
-                        Moderation
-                        Embedding
-            Node.js Web server
-                MVP bot-e App
-                Marketing
-                Advice column
+            nginx
+                gunicorn
+                    aiohttp
+                        Get Question
+                        Vote
+                        Similarity search
+                        Full-Text Search
+                        New Comment
+                        New Question
+                            OpenAI
+                                Moderation
+                                Embedding
+                Node.js Web server
+                    express.js
+                        Pug Templates
+                            Foundation CSS
 ```
 
 

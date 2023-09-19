@@ -3,6 +3,7 @@ var router = express.Router();
 var { check, validationResult } = require('express-validator');
 var axios = require('axios');  // <-- Require axios
 
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Bot-E', description: 'Bot-E: advice column 2.0.  What\'s going on?', canonical: 'https://bot-e/' });
@@ -19,10 +20,10 @@ router.post('/',
       res.render('index', { title: 'Bot-E', errors: errors.array() });
     }
     else {
-      //console.log("step 3")
       try {
 
           const apiServer = req.app.locals.apiServer;
+          console.log("testing")
 
           // Extract the reCAPTCHA token from the request
           const recaptchaToken = req.body["g-recaptcha-response"];
