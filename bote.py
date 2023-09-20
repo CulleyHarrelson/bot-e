@@ -24,22 +24,6 @@ os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
 openai.api_key = OPENAI_API_KEY
 
 
-def custom_json_serializer(obj):
-    if isinstance(obj, datetime):
-        return obj.strftime("%Y-%m-%d %H:%M:%S")
-    raise TypeError("Type not serializable")
-
-
-def db_connect():
-    conn = psycopg2.connect(
-        host="localhost",
-        dbname="bot-e",
-        port="5432",
-    )
-    cursor = conn.cursor(cursor_factory=DictCursor)
-    return conn, cursor
-
-
 async def create_db_pool():
     global pool
     if pool is None:
@@ -79,21 +63,6 @@ async def answer_next(conn):
         return dict(result)
     else:
         return None
-
-
-# def answer_next(cursor):
-#    # this returns an question record that is in need of moderation
-#    cursor.execute(
-#        "SELECT * FROM question WHERE answer IS NULL ORDER BY added_at ASC LIMIT 1;"
-#    )
-#
-#    question = cursor.fetchone()
-#    if question:
-#        columns = [desc[0] for desc in cursor.description]
-#        data = dict(zip(columns, question))
-#        return data
-#    else:
-#        return None
 
 
 async def annotate_question(conn, question):

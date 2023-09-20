@@ -117,6 +117,9 @@ to start the dev server. a symbolic link is required
 
 ```
 ln -s images/questions web/public/images/questions
+
+cd web
+pm2 ecosystem.config.js
 ```
 
 ## API setup
@@ -129,9 +132,7 @@ cd bot-e
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python api.py
-# when testing gunicorn 
-# gunicorn -b localhost:6464 --reload api:app
+gunicorn api:app --worker-class aiohttp.GunicornWebWorker --bind 0.0.0.0:6464 --reload --access-logfile - --log-level debug
 ```
 
 ## Bot-E Daemon
