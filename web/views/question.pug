@@ -81,7 +81,7 @@ block content
       font-size: 24px;
     }
   if !answer
-    meta(http-equiv="refresh" content="10")
+    meta(http-equiv="refresh" content="30")
     style.
       /* Define keyframes for the animation */
       @keyframes progress-animation {
@@ -112,33 +112,13 @@ block content
     script.
       document.addEventListener("DOMContentLoaded", function () {
         var progressMeter = document.querySelector(".progress-meter");
-        progressMeter.style.animationDuration = "10s";
+        progressMeter.style.animationDuration = "30s";
         // Start the animation by adding the animated class
         progressMeter.classList.add("progress-meter-animated");
       });
   else
     if !image_url
-      meta(http-equiv="refresh" content="20")
-    script(src='https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js')
-    script.
-      document.addEventListener('DOMContentLoaded', () => {
-        const clipboard = new ClipboardJS('#copy-button', {
-          text: () => window.location.href
-        });
-
-        clipboard.on('success', (e) => {
-          e.clearSelection();
-
-          const notice = document.createElement('div');
-          notice.textContent = 'Link copied to clipboard';
-          notice.classList.add('callout', 'success');
-          document.body.appendChild(notice);
-
-          setTimeout(() => {
-            document.body.removeChild(notice);
-          }, 3000); // Remove notice after 3 seconds
-        });
-      });
+      meta(http-equiv="refresh" content="30")
   +topBar
   script.
       $(document).foundation();
@@ -149,7 +129,7 @@ block content
           .card-divider
             | Answer
           .card-section
-            p.cell.small-12 It can take 10-15 seconds to respond - this page will refresh every 10 seconds until your response is ready.  Once you see the answer, wait approximately 20 seconds more to see the image for your question.
+            p.cell.small-12 It can take 20-30 seconds to respond - this page will refresh until your response is ready.  Once you see the answer, wait approximately 20 seconds more to see the image for your question.
             .cell.small-12
               .progress-container
                 .progress-meter(role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuetext="100 percent" aria-valuemax="100")

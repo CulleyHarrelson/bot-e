@@ -11,7 +11,6 @@ from datetime import datetime
 import os
 
 import io
-import warnings
 from PIL import Image
 from stability_sdk import client
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
@@ -23,13 +22,6 @@ pool = None
 os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
 
 openai.api_key = OPENAI_API_KEY
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        return super().default(obj)
 
 
 def custom_json_serializer(obj):
@@ -71,45 +63,37 @@ async def new_question(conn, question):
 
     async with conn.transaction():
         result = await conn.fetchrow(
-            "INSERT INTO question (question) VALUES ($1) RETURNING *", question
+            "INSERT INTO question (question) VALUES ($1) RETURNING question_id, question",
+            question,
         )
 
     return dict(result)
 
 
-def answer_next(cursor):
-    # this returns an question record that is in need of moderation
-    cursor.execute(
-        "SELECT * FROM question WHERE answer IS NULL ORDER BY added_at ASC LIMIT 1;"
-    )
-
-    question = cursor.fetchone()
-    if question:
-        columns = [desc[0] for desc in cursor.description]
-        data = dict(zip(columns, question))
-        return data
+async def answer_next(conn):
+    async with conn.transaction():
+        result = await conn.fetchrow(
+            "SELECT * FROM question WHERE answer IS NULL ORDER BY added_at ASC LIMIT 1;"
+        )
+    if result:
+        return dict(result)
     else:
         return None
 
 
-def respond():
-    conn, cursor = db_connect()
-    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-    question = answer_next(cursor)
-    cursor.execute("LISTEN new_question;")
-
-    while True:
-        if not question:
-            conn.poll()
-            while conn.notifies:
-                notify = conn.notifies.pop(0)
-                if notify.channel == "new_question":
-                    # question_id = notify.payload
-                    question = answer_next(cursor)
-                    break
-        else:
-            respond_to_question(conn, cursor, question)
-            question = answer_next(cursor)
+# def answer_next(cursor):
+#    # this returns an question record that is in need of moderation
+#    cursor.execute(
+#        "SELECT * FROM question WHERE answer IS NULL ORDER BY added_at ASC LIMIT 1;"
+#    )
+#
+#    question = cursor.fetchone()
+#    if question:
+#        columns = [desc[0] for desc in cursor.description]
+#        data = dict(zip(columns, question))
+#        return data
+#    else:
+#        return None
 
 
 async def annotate_question(conn, question):
@@ -129,31 +113,6 @@ async def post_question(question):
     question_record = await new_question(conn, question)
     await annotate_question(conn, question_record)
     return question_record
-
-
-def add_comment(question_id, comment, session_id):
-    try:
-        if not validate_key(question_id):
-            return json.dumps({"error": "question_id is required."})
-
-        conn, cursor = db_connect()
-        cursor.execute(
-            "select * from insert_question_comment (%s, %s, %s)",
-            (
-                question_id,
-                session_id,
-                comment,
-            ),
-        )
-        conn.commit()
-        result_tuple = cursor.fetchone()
-
-        cursor.close()
-        conn.close()
-        return result_tuple
-    except psycopg2.Error as e:
-        error_message = str(e)
-        return json.dumps({"error": error_message})
 
 
 def moderation_api(input_text):
@@ -184,68 +143,35 @@ def validate_key(key):
     return True
 
 
-def search(search_for):
-    conn, cursor = db_connect()
+async def search(search_for):
+    conn = await db_connect2()
 
-    cursor.execute(
-        "select question_id, question, answer, full_image_url(image_url) AS image_url, media, title, description, added_at from search(%s)",
-        (search_for,),
-    )
-    questions = cursor.fetchall()
-    # Convert the rows to a list of dictionaries
-    columns = [desc[0] for desc in cursor.description]
-    data = [dict(zip(columns, row)) for row in questions]
+    try:
+        query = """
+            SELECT question_id, question, answer, full_image_url(image_url) AS image_url, media, title, description, TO_CHAR(added_at, 'YYYY-MM-DD HH24:MI:SS') AS added_at FROM search($1)
+        """
+        questions = await conn.fetch(query, search_for)
 
-    cursor.close()
-    conn.close()
-    json_response = json.dumps(data, default=custom_json_serializer)
-    return json_response
-
-
-def trending(start_date):
-    conn, cursor = db_connect()
-
-    # third parameter row_limit not used below
-    cursor.execute(
-        "select * from get_top_upvotes(%s)",
-        (start_date,),
-    )
-    questions = cursor.fetchall()
-    # Convert the rows to a list of dictionaries
-    columns = [desc[0] for desc in cursor.description]
-    data = [dict(zip(columns, row)) for row in questions]
-
-    cursor.close()
-    conn.close()
-    json_response = json.dumps(data, default=custom_json_serializer)
-    return json_response
-
-
-def get_question(question_id, return_json=True):
-    conn, cursor = db_connect()
-
-    if not validate_key(question_id):
-        return json.dumps([])
-
-    cursor.execute(
-        "SELECT * FROM question WHERE question_id = %s",
-        (question_id,),
-    )
-    question = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    if not question:
-        return json.dumps([])
-
-    columns = [desc[0] for desc in cursor.description]
-    data = dict(zip(columns, question))
-
-    if return_json:
-        json_data = json.dumps(data, cls=DateTimeEncoder)
-        return json_data
-    else:
+        data = [dict(row) for row in questions]
         return data
+    finally:
+        await conn.close()
+
+
+async def trending(start_date):
+    conn = await db_connect2()
+
+    try:
+        query = """
+            SELECT * FROM get_top_upvotes($1)
+        """
+        questions = await conn.fetch(query, start_date)
+
+        data = [dict(row) for row in questions]
+
+        return data
+    finally:
+        await conn.close()
 
 
 async def simplified_question(question_id):
@@ -282,7 +208,7 @@ async def simplified_question(question_id):
 
 
 async def question_comments(question_id):
-    # TODO: moderate this
+    # TODO: moderate comments
     conn = await db_connect2()
 
     if not validate_key(question_id):
@@ -311,14 +237,14 @@ async def question_comments(question_id):
         comments_list = [dict(comment) for comment in comments]
 
         return comments_list
-    except Exception as e:
+    except Exception:
         return json.dumps([])
     finally:
         await conn.close()
 
 
 async def random_question():
-    conn = await db_connect2()  # Assuming db_connect2 is your async connection function
+    conn = await db_connect2()
 
     try:
         query = "SELECT * FROM question ORDER BY RANDOM() LIMIT 1"
@@ -329,7 +255,7 @@ async def random_question():
 
         return dict(question)  # Convert the record to a dictionary
 
-    except Exception as e:
+    except Exception:
         return []
     finally:
         await conn.close()
@@ -355,7 +281,7 @@ async def next_question(question_id, session_id, direction):
 
         return dict(question)  # Convert the record to a dictionary
 
-    except Exception as e:
+    except Exception:
         return []
     finally:
         await conn.close()
@@ -366,7 +292,20 @@ def embedding_api(input_text):
     return response["data"][0]["embedding"]
 
 
-def respond_to_question(conn, cursor, data):
+async def respond_to_question_callback(conn, pid, channel, payload):
+    question = await answer_next(conn)
+    if question:
+        await respond_to_question(conn, question)
+
+
+async def respond():
+    conn = await db_connect2()
+    await conn.add_listener("new_question", respond_to_question_callback)
+    event = asyncio.Event()
+    await event.wait()
+
+
+async def respond_to_question(conn, data):
     user_message = data["question"]
     with open("data/system_prompt.txt", "r") as file:
         system_prompt = file.read()
@@ -385,15 +324,17 @@ def respond_to_question(conn, cursor, data):
             "content": f"{user_message}",
         },
     ]
-    completion = openai.ChatCompletion.create(
-        # model="gpt-4",
-        model="gpt-3.5-turbo",
-        messages=messages,
+
+    # Make an asynchronous call to OpenAI
+    completion = await asyncio.to_thread(
+        openai.ChatCompletion.create, model="gpt-3.5-turbo", messages=messages
     )
 
     messages.append(completion["choices"][0]["message"])
 
     response_message = completion["choices"][0]["message"]["content"]
+
+    # Parse the response message
     lines = response_message.split("\n", 1)
     title_line = lines[0]
     rest_of_answer = lines[1]
@@ -405,62 +346,58 @@ def respond_to_question(conn, cursor, data):
         title = ""
         rest_of_answer = response_message
 
-    cursor.execute(
-        "update question set answer = %s, system_prompt = %s, title = %s where question_id = %s",
-        (
+    # Establish an asyncpg connection
+    async with conn.transaction():
+        # Execute SQL statements using asyncpg
+        await conn.execute(
+            "update question set answer = $1, system_prompt = $2, title = $3 where question_id = $4",
             json.dumps(rest_of_answer),
             system_message,
             title,
             question_id,
-        ),
-    )
-    conn.commit()
-    with open("data/question_functions.json", "r") as file:
-        functions = json.load(file)
+        )
 
-    function_completion = openai.ChatCompletion.create(
-        # model="gpt-4",
-        model="gpt-3.5-turbo",
-        messages=messages,
-        functions=functions,
-        function_call={"name": "extract_data"},
-    )
-    function_message = function_completion["choices"][0]["message"]
+        with open("data/question_functions.json", "r") as file:
+            functions = json.load(file)
 
-    if function_message.get("function_call"):
-        function_response = json.loads(function_message["function_call"]["arguments"])
-        description = function_response["description"]
-        media = function_response["media"]
-        # if len(media) > 0:
-        #     for record in media:
-        #         videos = search_youtube_videos(record["title"])
-        #         for video in videos:
-        #             record["videoId"] = video["videoId"]
-        #             record["thumbnailUrl"] = video["thumbnailUrl"]
-        #             record["videoTitle"] = video["title"]
+        # Make an asynchronous call to OpenAI for function completion
+        function_message = await asyncio.to_thread(
+            openai.ChatCompletion.create,
+            model="gpt-3.5-turbo",
+            messages=messages,
+            functions=functions,
+            function_call={"name": "extract_data"},
+        )
 
-        if len(title) == 0:
-            # if there was a previous title failure....
-            title = function_response["title"]
+        function_message = function_message["choices"][0]["message"]
 
-        try:
-            image_url = stability_image(title, question_id)
-        except Exception as e:
-            image_url = openai_image(title, question_id)
-        cursor.execute(
-            "update question set title = %s, description = %s, image_url = %s, media = %s where question_id = %s",
-            (
+        if function_message.get("function_call"):
+            function_response = json.loads(
+                function_message["function_call"]["arguments"]
+            )
+            description = function_response["description"]
+            media = function_response["media"]
+
+            if len(title) == 0:
+                # if there was a previous title failure....
+                title = function_response["title"]
+
+            try:
+                image_url = await asyncio.to_thread(stability_image, title, question_id)
+            except Exception:
+                image_url = await asyncio.to_thread(openai_image, title, question_id)
+
+            await conn.execute(
+                "update question set title = $1, description = $2, image_url = $3, media = $4 where question_id = $5",
                 title,
                 description,
                 image_url,
                 json.dumps(media),
                 question_id,
-            ),
-        )
-        conn.commit()
+            )
 
     # TODO: change this to simplified_question()
-    return get_question(question_id)
+    return await simplified_question(question_id)
 
 
 def openai_image(title, question_id):
@@ -528,145 +465,4 @@ def stability_image(title, question_id):
 
 
 if __name__ == "__main__":
-    respond()
-    # conn, cursor = db_connect()
-    # question = get_question("KiV4OnQED4V", return_json=False)
-    # response = respond_to_question(conn, cursor, question)
-
-
-# def search_youtube_videos(search_phrase):
-#     youtube = googleapiclient.discovery.build(
-#         "youtube", "v3", developerKey=os.environ["YOUTUBE_DATA_API_KEY"]
-#     )
-#     try:
-#         # Perform the YouTube search
-#         request = youtube.search().list(
-#             q=search_phrase, type="video", part="id,snippet", maxResults=1
-#         )
-#
-#         response = request.execute()
-#
-#         # Construct the list of dictionaries
-#         results = []
-#         for item in response.get("items", []):
-#             result = {
-#                 "videoId": item["id"]["videoId"],
-#                 "thumbnailUrl": item["snippet"]["thumbnails"]["default"]["url"],
-#                 "title": item["snippet"]["title"],
-#             }
-#             results.append(result)
-#
-#         return results
-#     except HttpError as e:
-#         print(f"An HTTP error occurred: {e}")
-#         return []
-
-
-# import googleapiclient.discovery
-# from googleapiclient.errors import HttpError
-
-# TODO get this working in cron regularly
-# def moderate_questions():
-#    conn, cursor = db_connect()
-#    while True:
-#        question = next_moderation(cursor)
-#        if question is None:
-#            break
-#
-#        moderation = moderation_api(question["question"])
-#        cursor.execute(
-#            "update question set moderation = %s where question_id = %s",
-#            (json.dumps(moderation), question["question_id"]),
-#        )
-#        conn.commit()
-#    conn.close()
-#    cursor.close()
-
-# def moderate_question(conn, cursor, question):
-#    moderation = moderation_api(question["question"])
-#    cursor.execute(
-#        "update question set moderation = %s where question_id = %s",
-#        (json.dumps(moderation), question["question_id"]),
-#    )
-#    conn.commit()
-
-# def new_question(conn, cursor, question):
-#    question = question.strip()
-#    if len(question) < 1:
-#        return {}
-#    # insert a new question record and get back the question_id
-#    cursor.execute(
-#        "INSERT INTO question (question) VALUES (%s) RETURNING *", (question,)
-#    )
-#    conn.commit()
-#    result_tuple = cursor.fetchone()
-#
-#    column_names = [desc[0] for desc in cursor.description]
-#    result_dict = dict(zip(column_names, result_tuple))
-#
-#    return result_dict
-
-# def get_questions(question_ids):
-#    conn, cursor = db_connect()
-#
-#    # Filter out invalid question_ids
-#    valid_question_ids = [
-#        question_id for question_id in question_ids if validate_key(question_id)
-#    ]
-#
-#    cursor.execute(
-#        "select question_id, question, answer, full_image_url(image_url) AS image_url, media, title, description, added_at from question where question_id = ANY(%s)",
-#        (valid_question_ids,),
-#    )
-#    questions = cursor.fetchall()
-#    # Convert the rows to a list of dictionaries
-#    columns = [desc[0] for desc in cursor.description]
-#    data = [dict(zip(columns, row)) for row in questions]
-#
-#    cursor.close()
-#    conn.close()
-#    json_response = json.dumps(data, default=custom_json_serializer)
-#    return json_response
-
-
-# def next_embedding(cursor):
-#    # this returns an question record that is in need of embedding
-#    cursor.execute(
-#        "SELECT * FROM question WHERE embedding IS NULL ORDER BY added_at LIMIT 1;"
-#    )
-#    return cursor.fetchone()
-#
-#
-# def next_moderation(cursor):
-#    # this returns an question record that is in need of moderation
-#    cursor.execute(
-#        "SELECT * FROM question WHERE moderation IS NULL ORDER BY added_at LIMIT 1;"
-#    )
-#    return cursor.fetchone()
-
-# def embed_question(conn, cursor, question):
-#    embedding = embedding_api(question["question"])
-#    cursor.execute(
-#        "update question set embedding = %s where question_id = %s",
-#        (embedding, question["question_id"]),
-#    )
-#    conn.commit()
-#
-#
-## TODO put this on a cron job
-# def embed_questions():
-#    conn, cursor = db_connect()
-#    while True:
-#        question = next_embedding(cursor)
-#        if question is None:
-#            break
-#
-#        embedding = embedding_api(question["question"])
-#        cursor.execute(
-#            "update question set embedding = %s where question_id = %s",
-#            (embedding, question["question_id"]),
-#        )
-#        conn.commit()
-#        # time.sleep(0.8)
-#    conn.close()
-#    cursor.close()
+    asyncio.run(respond())

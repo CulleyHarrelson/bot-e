@@ -23,7 +23,7 @@ router.post('/',
       try {
 
           const apiServer = req.app.locals.apiServer;
-          console.log("testing")
+          //console.log("testing")
 
           // Extract the reCAPTCHA token from the request
           const recaptchaToken = req.body["g-recaptcha-response"];

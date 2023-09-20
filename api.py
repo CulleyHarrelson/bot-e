@@ -6,6 +6,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import BadRequest
 from html import unescape
 import re
+import asyncio
 
 app = Flask(__name__)
 
@@ -37,15 +38,16 @@ def custom_json_serializer(obj):
 
 
 # this isn't called yet
-@app.route("/list/<array_of_ids>", methods=["GET"])
-def get_rows_by_ids(array_of_ids):
-    try:
-        ids_list = array_of_ids.split(",")
-
-        return bote.get_questions(ids_list)
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# @app.route("/list/<array_of_ids>", methods=["GET"])
+# def get_rows_by_ids(array_of_ids):
+#    try:
+#        ids_list = array_of_ids.split(",")
+#
+#        return bote.get_questions(ids_list)
+#
+#    except Exception as e:
+#        return jsonify({"error": str(e)}), 500
+#
 
 
 @app.route("/trending/<start_date>", methods=["GET"])
@@ -71,21 +73,28 @@ def trending(start_date):
 
 
 @app.route("/comments/<question_id>", methods=["GET"])
-def get_question_comments_id(question_id):
+async def get_question_comments_id(question_id):
     try:
         # Get the rows from the database
-        comments = bote.question_comments(question_id)
-        return comments
+        comments = await bote.question_comments(question_id)
+
+        if not comments:
+            # Return an empty JSON array if no comments are found
+            return jsonify([])
+
+        return jsonify(comments)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
 @app.route("/question/<question_id>", methods=["GET"])
-def get_question_by_id(question_id):
+async def get_question_by_id(question_id):
     try:
         # Get the rows from the database
-        question = bote.simplified_question(question_id)
+        print("here")
+        question = await bote.simplified_question(question_id)
+        print("there")
 
         response = jsonify(question)
         response.headers["Content-Type"] = "application/json"
@@ -126,7 +135,7 @@ def next_question():
 
 
 @app.route("/ask", methods=["POST"])
-def post_question():
+async def post_question():
     try:
         data = request.get_json()
 
@@ -135,8 +144,8 @@ def post_question():
 
         question = data["question"]
 
-        question = bote.post_question(question)
-        return question
+        result = await bote.post_question(question)
+        return jsonify(result)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -167,9 +176,6 @@ def add_comment():
             return jsonify({"error": "session_id is required."}), 400
 
         session_id = data["session_id"]
-
-        # add this in to enable replies
-        # parent_comment_id = data["parent_comment_id"]
 
         # Process the question using bote or any other necessary method
         comment = bote.add_comment(question_id, comment, session_id)

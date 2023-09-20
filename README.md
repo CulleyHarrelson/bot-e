@@ -3,23 +3,18 @@
 
 ## MVP TODO:
 
-- Finish TOS
-- finish comments
-    - do not refresh page
+- Finish Privacy Policy 
 - change image_url to use full domain
 - Build Server
-    - Node.js DONE
-    - nginx
-        -SSL certificate
-    - Postgresql - DONE
-        - pgVector - DONE
+    - pm2
+    - Gunicorn
+        - aiohttp
+    - Postgresql 
         - backups
-    - Python 3.9 
-        - openAI - stuck on gcc12
-        - Flask/Gunicorn
-        - bot-e Daemon
-            - logging
-            - Supervisor
+    - bot-e Daemon
+        - asyncio
+        - logging
+        - Supervisor
 - Transfer domain
     - Oct 4
 - Add LLC stuff
@@ -34,12 +29,13 @@
 Backlog:
     - Flutter App
     - Varnish
-    - Email Marketing
+    - Websockets streaming response
     - Create Social Media Presence
         - Instagram
         - LinkedIn
         - TikTok
         - Facebook
+    - Email Marketing
 
 Advice Request Message Flow:
 

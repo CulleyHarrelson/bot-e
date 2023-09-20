@@ -6,9 +6,7 @@ from dateutil.parser import isoparse
 import re
 from html import unescape
 import asyncio
-
-# import json
-
+import json
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
@@ -26,14 +24,46 @@ async def contains_url(input_string):
     return bool(matches)
 
 
-async def get_rows_by_ids(request):
-    # Implementation here
-    pass
-
-
 async def trending(request):
-    # Implementation here
-    pass
+    try:
+        start_date = request.query.get("start_date")
+
+        if not start_date:
+            raise web.HTTPBadRequest(text="Missing 'start_date' query parameter.")
+
+        try:
+            start_date_parsed = isoparse(start_date)
+        except ValueError:
+            raise web.HTTPBadRequest(
+                text="Invalid date format. Please use ISO 8601 format (YYYY-MM-DD)."
+            )
+
+        if not isinstance(start_date_parsed, datetime):
+            raise ValueError("Invalid date format")
+
+        # Assuming `bote.trending` is an async function, await it
+        result = await bote.trending(start_date_parsed)
+
+        # Use web.json_response to return JSON responses
+        return web.json_response(result)
+
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+
+async def search(request):
+    try:
+        search_for = request.match_info["search_for"]
+
+        if not search_for:
+            raise web.HTTPBadRequest(text="Missing search phrase parameter.")
+
+        result = await bote.search(search_for)
+
+        return web.json_response(result)
+
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
 
 
 async def get_question_comments_id(request):
@@ -109,32 +139,60 @@ async def next_question(request):
 
 async def post_question(request):
     try:
-        data = request.json()
+        data = await request.json()
         if "question" not in data or not data["question"]:
             return web.json_response({"error": "question is required."}, status=400)
 
         question = data["question"]
 
-        logging.debug(f"new question: {question}")
+        # logging.debug(f"new question: {question}")
 
         result = await bote.post_question(question)
         return web.json_response(result)
 
     except Exception as e:
-        logging.exception("Error occurred while processing the request.")
+        # logging.exception("Error occurred while processing the request.")
         return web.json_response({"error": str(e)}), 500
 
 
 async def add_comment(request):
-    # Implementation here
-    pass
+    try:
+        data = await request.json()
+        question_id = data.get("question_id")
+        session_id = data.get("session_id")
+        comment = data.get("comment")
+
+        if not question_id or not session_id or not comment:
+            return web.json_response(
+                {"error": "question_id, session_id, and comment are required."},
+                status=400,
+            )
+
+        if not bote.validate_key(question_id):
+            return web.json_response({"error": "Invalid question_id."}, status=400)
+
+        conn = await db_connect2()  # Use db_connect2 to establish a database connection
+
+        try:
+            async with conn.transaction():
+                result_tuple = await conn.fetchval(
+                    "select * from insert_question_comment ($1, $2, $3)",
+                    (question_id, session_id, comment),
+                )
+
+            return web.json_response({"result": result_tuple})
+        finally:
+            await conn.close()
+    except Exception as e:
+        error_message = str(e)
+        return web.json_response({"error": error_message}, status=500)
 
 
 async def init_app():
     app = web.Application()
     # Add routes here
-    app.router.add_get("/list/{array_of_ids}", get_rows_by_ids)
     app.router.add_get("/trending/{start_date}", trending)
+    app.router.add_get("/search/{search_for}", search)
     app.router.add_get("/comments/{question_id}", get_question_comments_id)
     app.router.add_get("/question/{question_id}", get_question_by_id)
     app.router.add_post("/next_question", next_question)
