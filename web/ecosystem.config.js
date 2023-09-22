@@ -5,13 +5,12 @@ module.exports = {
       script: 'app.js',
       instances: 1,
       autorestart: true,
-      //watch: process.env.NODE_ENV === 'development', 
-      watch: true,
+      watch: process.env.BOTE_ENV === 'development', 
       env: {
         PORT: 3000, 
         DEBUG: '*', 
       },
-      log_level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+      log_level: process.env.BOTE_ENV === 'development' ? 'debug' : 'info',
     },
   ],
 };

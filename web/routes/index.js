@@ -22,8 +22,8 @@ router.post('/',
     else {
       try {
 
+          const sessionId = req.sessionID;
           const apiServer = req.app.locals.apiServer;
-          //console.log("testing")
 
           // Extract the reCAPTCHA token from the request
           const recaptchaToken = req.body["g-recaptcha-response"];
@@ -40,7 +40,7 @@ router.post('/',
               //console.log("step 6")
               //console.log("reCAPTCHA Score:", verificationResponse.data.score);
               try {
-                const apiResponse = await axios.post(`${apiServer}/ask`, { question: req.body.question });
+                const apiResponse = await axios.post(`${apiServer}/ask`, { question: req.body.question, session_id: sessionId  });
                 res.redirect("/question/" + apiResponse.data['question_id']);
               } catch (err) {
                 res.render('index', { title: 'Bot-E', errors: [err] });

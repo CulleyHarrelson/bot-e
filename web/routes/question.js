@@ -6,7 +6,7 @@ const axios = require('axios');
 router.get('/:question_id', async function(req, res, next) {
   try {
     const questionId = req.params.question_id;
-    const sessionId = req.sessionID;
+    const session_id = req.sessionID;
 
     const apiServer = req.app.locals.apiServer;
 
@@ -23,6 +23,16 @@ router.get('/:question_id', async function(req, res, next) {
     const description = questionDetails.description;
     const image_url = questionDetails.image_url;
     const media = questionDetails.media;
+    const creator_session_id = questionDetails.creator_session_id;
+
+    let creator = 'NO';
+    if (session_id == creator_session_id) {
+      creator = 'YES';
+    }
+    console.log(`session_id: ${session_id}`)
+    console.log(`creator_session_id: ${creator_session_id}`)
+    console.log(creator)
+    //console.log(questionDetails.creator_session_id)
 
     let question = questionDetails.question;
     if (question) {
@@ -45,13 +55,15 @@ router.get('/:question_id', async function(req, res, next) {
     const canonical = `https://bot-e.com/question/${questionId}`;
 
     // Combine the question and comments data into a single object
+    
     const responseData = {
       title,
       questionId,
       question,
       answer,
       image_url,
-      sessionId,
+      session_id,
+      creator, // testing2
       canonical,
       comments, // Include comments data
     };

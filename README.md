@@ -125,6 +125,7 @@ pm2 ecosystem.config.js
 ## API setup
 
 The express app expects an api server at localhost:6464 
+local_api_server.sh creates api.log
 Setup commands:
 
 ```
@@ -132,7 +133,8 @@ cd bot-e
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-gunicorn api:app --worker-class aiohttp.GunicornWebWorker --bind 0.0.0.0:6464 --reload --access-logfile - --log-level debug
+./bin/local_api_server.sh
+tail -f api.log
 ```
 
 ## Bot-E Daemon

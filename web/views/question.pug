@@ -81,7 +81,6 @@ block content
       font-size: 24px;
     }
   if !answer
-    meta(http-equiv="refresh" content="30")
     style.
       /* Define keyframes for the animation */
       @keyframes progress-animation {
@@ -116,9 +115,6 @@ block content
         // Start the animation by adding the animated class
         progressMeter.classList.add("progress-meter-animated");
       });
-  else
-    if !image_url
-      meta(http-equiv="refresh" content="30")
   +topBar
   script.
       $(document).foundation();
@@ -129,25 +125,27 @@ block content
           .card-divider
             | Answer
           .card-section
-            p.cell.small-12 It can take 20-30 seconds to respond - this page will refresh until your response is ready.  Once you see the answer, wait approximately 20 seconds more to see the image for your question.
+            p.cell.small-12 It can take a minute to generate a response.  We are working hard to incorporate a streaming response that starts immediately!  Meanwhile, refreshing the page or navigating away mess up the response, so please be patient! 
             .cell.small-12
               .progress-container
                 .progress-meter(role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuetext="100 percent" aria-valuemax="100")
                   span.progress-meter-text
-            .cell.small-12.text-center(style="padding-top: 20px;")
-              button.button(type='button', onclick='location.reload();') I'm tired of waiting, refresh now!
-      .card
-        .card-section
-          h4 !{title}
-          if image_url
-            img(src=image_url width=256 height=256 alt=title)
-      if !answer
-      .card
-        .card-divider
-          | Question
-        .card-section
-          p !{question}
-      if answer
+        .card
+          .card-divider
+            | Question
+          .card-section
+            p !{question}
+      else
+        .card
+          .card-section
+            h4 !{title}
+            if image_url
+              img(src=image_url width=256 height=256 alt=title)
+        .card
+          .card-divider
+            | Question
+          .card-section
+            p !{question}
         .card
           .card-divider
             | Answer
