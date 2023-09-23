@@ -1,5 +1,7 @@
 extends layout
 block meta
+    if !answer
+      meta(http-equiv="refresh" content="20")
     meta(property="og:title" content=title)
     meta(property="og:description" content=description)
     meta(property="og:image" content=image_url)
@@ -15,7 +17,7 @@ mixin navButtons
       .card-section
     form(id="question-form" method="post" action="/next_question")
         input(type="hidden", name="question_id", value=questionId)
-        input(type="hidden", name="session_id", value=sessionId)
+        input(type="hidden", name="session_id", value=session_id)
         .grid-x.grid-margin-x.align-middle(style="padding-top: 10px;")
           .cell.medium-4.text-center
             button.button(type="button", name="direction" value="down", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='onSubmitDown', data-tooltip, tabindex="3", title="Show me something else, not like this question.") Show me Something Different
@@ -54,7 +56,7 @@ mixin navButtons
         }
       })
       .catch(error => {
-        console.error('Error:', error);
+        console.debug('Error:', error);
       });
     }
 
@@ -72,6 +74,22 @@ mixin navButtons
 
 
 block content
+  script.
+      function showCallout(message, messageType) {
+        const notice = document.createElement('div');
+        notice.textContent = message;
+        notice.classList.add('callout', messageType);
+        const calloutContainer = document.getElementById('callout');
+
+        if (calloutContainer) {
+          calloutContainer.appendChild(notice);
+          setTimeout(() => {
+            calloutContainer.removeChild(notice);
+          }, 3000);
+        } else {
+          console.error('Callout container with id "callout_id" not found.');
+        }
+      }
   if error
     .error-shoutout
       p Error: #{error}
@@ -111,13 +129,12 @@ block content
     script.
       document.addEventListener("DOMContentLoaded", function () {
         var progressMeter = document.querySelector(".progress-meter");
-        progressMeter.style.animationDuration = "30s";
+        progressMeter.style.animationDuration = "20s";
         // Start the animation by adding the animated class
         progressMeter.classList.add("progress-meter-animated");
       });
   +topBar
   script.
-      $(document).foundation();
   .flex-container.align-center.margin-3
     .small-up-1.medium-up-2
       if !answer
@@ -125,15 +142,51 @@ block content
           .card-divider
             | Answer
           .card-section
-            p.cell.small-12 It can take a minute to generate a response.  We are working hard to incorporate a streaming response that starts immediately!  Meanwhile, refreshing the page or navigating away mess up the response, so please be patient! 
+            p.cell.small-12 It can take up to a minute to generate a response.  We are working hard to incorporate a streaming response that starts immediately!  Meanwhile, refreshing the page or navigating away mess up the response, so please be patient! 
             .cell.small-12
               .progress-container
                 .progress-meter(role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuetext="100 percent" aria-valuemax="100")
                   span.progress-meter-text
+            .cell.small-12
+              div.text-center 
+                div(style="padding-top: 20px;") 
+                  img(id="waitingGif" src="" alt="GIF Image")
+                  script.
+                    const gif_codes = ['l0HlBO7eyXzSZkJri', 'QPQ3xlJhqR1BXl89RG', '26BRuo6sLetdllPAQ', 'SWVzkIlHdEckF81gnA', 'PCvkgunX9ZbEEyfTQH', 'tXL4FHPSnVJ0A', 'ohdmJuMIE08Ld7Jj0s', 'FoH28ucxZFJZu', 'QhjR3MG9ZFfjB6BtIZ', '229Pljon180JF07BaX', 'wbXkGmM7YMgpCggnPB', '26his5i9YJTqsqCyY', 'QBd2kLB5qDmysEXre9', 'IcoMfdWwY26mBcX008', '2tOsjtp4xFgD6pc48U', '4SY40ExbxfyOyD91VI', 'PWfHC8ogZpWcE', 'hCiQVo1dzVwPu', 'Qt1jk5Q49C3h5CrlBe', 'lP4jmO461gq9uLzzYc', 'J6ctgPvnDpDi0', '2WGDUTmsB4DzFuvZ2t', 'u5eXlkXWkrITm', 'd2qJhxeaaWXPG', 'hFmIU5GQF18Aw', 'QUmpqPoJ886Iw', 'MgRKCBGvlpqTENUzWk', 'ZXKZWB13D6gFO', 'xf20D8HzvTQzu', 'ZR8teuiCs3AkSkzjnG', 'deamFJOd89iTk0xYpR', 'HxPx004f5fFXhpQDvH', '3kACvwjyzgOdqE3GWT', 'GiWEowj3nQv9C', 'E4pi99w43ecCV1n9jF', '7zrZAg61HEsYDmOvto', 'F77lbfwEAnYNG', 'ZcnwOpPTw9Ucw', 'BAYZwXqJ3zQnC', '26n6xBpxNXExDfuKc', 'QHtZ75OT07KKKxLuJ5', 'xA1PKCt00IDew', '3oriNSGVr5DmGh6ZTq', 'l0ExtLXXJ5FiBozPa', '3otPouzI8Zjnpc08RG', 'l4HnKwiJJaJQB04Zq', '2fjjoFrNS4XzW', 'xUPGcdy9cg74187mco', 'gZ0GEz2HefV4s', '3o85xscgnCWS8Xxqik', 'hiu4RJvbEBUVq', 'o3yJlZPX0uV4fkGfvd', 'a6HJquvTVsBws', 'SiM5c8aqHwqcfD9JIG', 'j9UHmOnjCNrIDZRoTe', '1wq8UZXyxY4UiiovWP', 'kVRBvsiOyBM8o', '3o7TKxOhkp8gO0LXMI', '3oz8xwjA7yu1VGIaac', 'xTiTnirBmnXzvbCzHG', 'aqFRBqGjnznd6', '3orieVVxVESoH7f5yo', '13uaMxgBhGP9ba', 'l5u6SuofjVf56', 'l3q2NsJfJxVuOv3by', 'KGHua3DXhxTS4MBHrK', 'YpxH6P6nnyV7yWapGa', 'poLAPeLtXo778QhYIy', 'T99wGqreuiWFc83NU2', 'YZFO68qCW9KtG', 'RPhZ5IZfA7Ia7kyApl', 'l0MYRfGACGXlqL86A', '10LCn5MSXM8d3O', 'KAnPj9HruovDi', '3oEdv9pgtUVVYdpaY8', 'bCwB9W585jiYU', '10THtJ9zWzPDQQ', 'SPwq6rg2vcig8', 'phY1SBXy4y4Io', 'gKIyqq4JESg4p3RW8V', 'Ep8H7w4ayN2k3XWz2x', 'OD2h5eK4XZI5yQ8iQo', 'xT9IgAr64UiCRYbKco', 'xT0BKtgZQfFRB8pegg'];
+
+                    function getRandomGifCode() {
+                      const randomIndex = Math.floor(Math.random() * gif_codes.length);
+                      return gif_codes[randomIndex];
+                    }
+
+                    function replaceImageSrc(gif_code) {
+                      const baseUrl = 'https://media.giphy.com/media/';
+                      const imageUrl = baseUrl + gif_code + '/giphy.gif';
+                      
+                      // Replace the src attribute of the image with the new URL
+                      const imageElement = document.getElementById('waitingGif');
+                      if (imageElement) {
+                        imageElement.src = imageUrl;
+                      } else {
+                        console.error('Image element not found.');
+                      }
+                    }
+
+                    const initialGifCode = getRandomGifCode();
+                    replaceImageSrc(initialGifCode);
+
+                    setInterval(() => {
+                      const randomGifCode = getRandomGifCode();
+                      replaceImageSrc(randomGifCode);
+                    }, 5000);
+
+                
+
         .card
           .card-divider
             | Question
           .card-section
+            .row(id="callout")
             p !{question}
       else
         .card
@@ -176,21 +229,6 @@ block content
                           hour: '2-digit',
                           minute: '2-digit',
                         });
-                      }
-                      function showCallout(message, messageType) {
-                        const notice = document.createElement('div');
-                        notice.textContent = message;
-                        notice.classList.add('callout', messageType);
-                        const calloutContainer = document.getElementById('callout');
-
-                        if (calloutContainer) {
-                          calloutContainer.appendChild(notice);
-                          setTimeout(() => {
-                            calloutContainer.removeChild(notice);
-                          }, 3000);
-                        } else {
-                          console.error('Callout container with id "callout_id" not found.');
-                        }
                       }
                       function onCommentAdd(token) {
                         const commentInput = document.querySelector('input[name="comment"]');
@@ -245,7 +283,6 @@ block content
   if !answer
     script.
       question_id = "#{questionId}";
-      console.log(question_id);
       fetch('http://localhost:6464/respond', { 
         method: 'POST',
         body: JSON.stringify({question_id: question_id}),

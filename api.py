@@ -6,11 +6,7 @@ from dateutil.parser import isoparse
 import re
 from html import unescape
 import asyncio
-
-# import json
-import logging
-
-log = bote.setup_logging(level=logging.DEBUG)
+import aiohttp_cors
 
 
 async def contains_html(input_string):
@@ -59,12 +55,13 @@ async def get_question_by_id(request):
     try:
         # Get the rows from the database
         question_id = request.match_info["question_id"]
-        log.debug(f"Fetching question with ID: {question_id}")
+        bote.debug(f"Fetching question with ID: {question_id}")
         question = await bote.simplified_question(question_id)
         if question:
-            log.debug("found question")
+            bote.debug("found question")
+
         else:
-            log.debug(f"question not found: {question_id}")
+            bote.debug(f"question not found: {question_id}")
         response = web.json_response(question)
         response.headers["Content-Type"] = "application/json"
 
@@ -72,9 +69,9 @@ async def get_question_by_id(request):
 
     except Exception as e:
         if question_id:
-            log.warn(f"Error occurred while getting data for question {question_id}")
+            bote.warn(f"Error occurred while getting data for question {question_id}")
         else:
-            log.critical("no question id to look up in the database.")
+            bote.critical("no question id to look up in the database.")
         return web.json_response({"error": str(e)}, status=500)
 
 
@@ -91,7 +88,7 @@ async def next_question(request):
         direction = data["direction"]
         question_id = data["question_id"]
         session_id = data["session_id"]
-        log.debug(question_id)
+        bote.debug(question_id)
 
         if direction == "random":
             random_question = await bote.random_question()
@@ -120,9 +117,9 @@ async def next_question(request):
 
 async def post_question(request):
     try:
-        log.debug("in post question here ")
+        bote.debug("in post question here ")
         data = await request.json()
-        log.debug("begging post question function in api script")
+        bote.debug("begging post question function in api script")
         if "question" not in data or not data["question"]:
             return web.json_response({"error": "question is required."}, status=400)
         if "session_id" not in data or not data["session_id"]:
@@ -131,7 +128,7 @@ async def post_question(request):
         question = data["question"]
         session_id = data["session_id"]
 
-        logging.debug(f"new question for session: {session_id}")
+        bote.debug(f"new question for session: {session_id}")
 
         result = await bote.post_question(question, session_id)
         return web.json_response(result)
@@ -142,14 +139,14 @@ async def post_question(request):
 
 async def respond(request):
     try:
-        log.debug("in respond")
+        bote.debug("in respond")
         data = await request.json()
         if "question_id" not in data or not data["question_id"]:
             return web.json_response({"error": "question_id is required."}, status=400)
 
         question_id = data["question_id"]
 
-        logging.debug(f"responding: {question_id}")
+        bote.debug(f"responding: {question_id}")
 
         result = await bote.respond(question_id)
         return web.json_response(result)
@@ -207,6 +204,27 @@ async def init_app():
 
 loop = asyncio.get_event_loop()
 app = loop.run_until_complete(init_app())
+
+
+cors = aiohttp_cors.setup(app)
+
+# Define the resource and route for the /respond endpoint
+resource = cors.add(app.router.add_resource("/respond"))
+route = cors.add(
+    resource.add_route("POST", respond),
+    {
+        "http://localhost:3000": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,  # Allow credentials (cookies, authentication)
+            expose_headers=("X-Custom-Header",),  # Expose custom headers
+            allow_headers=(
+                "Content-Type",
+                "Authorization",
+            ),  # Allow headers in requests
+            max_age=3600,  # Set the maximum age for preflight requests (in seconds)
+        )
+    },
+)
+
 
 # tasync def trending(request):
 #    try:

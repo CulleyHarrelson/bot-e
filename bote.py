@@ -1,9 +1,5 @@
 #!/usr/local/bin/python
 
-import psycopg2
-import psycopg2.extensions
-from psycopg2.extras import DictCursor
-
 import requests
 import openai
 import json
@@ -59,6 +55,25 @@ def setup_logging(level=logging.DEBUG):
     return logger
 
 
+logger = setup_logging()
+
+
+def debug(msg):
+    logger.debug(msg)
+
+
+def warn(msg):
+    logger.warn(msg)
+
+
+def critical(msg):
+    logger.critical(msg)
+
+
+def info(msg):
+    logger.info(msg)
+
+
 async def create_db_pool():
     global pool
     if pool is None:
@@ -72,7 +87,14 @@ async def create_db_pool():
 
 async def db_connect2():
     pool = await create_db_pool()
-    return await pool.acquire()
+    connection = await pool.acquire()
+
+    return connection
+
+
+async def db_release(connection):
+    # Release the connection back to the pool
+    await pool.release(connection)
 
 
 async def new_question(conn, question, session_id):
@@ -114,10 +136,13 @@ async def annotate_question(conn, question):
 
 
 async def post_question(question, session_id):
-    conn = await db_connect2()
-    question_record = await new_question(conn, question, session_id)
-    await annotate_question(conn, question_record)
-    return question_record
+    try:
+        conn = await db_connect2()
+        question_record = await new_question(conn, question, session_id)
+        await annotate_question(conn, question_record)
+        return question_record
+    finally:
+        await db_release(conn)
 
 
 def moderation_api(input_text):
@@ -160,7 +185,7 @@ async def search(search_for):
         data = [dict(row) for row in questions]
         return data
     finally:
-        await conn.close()
+        await db_release(conn)
 
 
 async def trending(start_date):
@@ -176,41 +201,44 @@ async def trending(start_date):
 
         return data
     finally:
-        await conn.close()
+        await db_release(conn)
 
 
 async def simplified_question(question_id):
     """
     suface limited data to api
     """
-    conn = await db_connect2()
+    try:
+        conn = await db_connect2()
 
-    if not validate_key(question_id):
-        return json.dumps([])
+        if not validate_key(question_id):
+            return json.dumps([])
 
-    query = """
-        SELECT 
-            question_id, 
-            question, 
-            answer, 
-            full_image_url(image_url) AS image_url, 
-            media, 
-            title, 
-            description, 
-            creator_session_id,
-            TO_CHAR(added_at, 'YYYY-MM-DD HH24:MI:SS') AS added_at
-        FROM question
-        WHERE question_id = $1
-        """
+        query = """
+            SELECT 
+                question_id, 
+                question, 
+                answer, 
+                full_image_url(image_url) AS image_url, 
+                media, 
+                title, 
+                description, 
+                creator_session_id,
+                TO_CHAR(added_at, 'YYYY-MM-DD HH24:MI:SS') AS added_at
+            FROM question
+            WHERE question_id = $1
+            """
 
-    async with conn.transaction():
-        question = await conn.fetchrow(query, question_id)
+        async with conn.transaction():
+            question = await conn.fetchrow(query, question_id)
 
-    if not question:
-        return json.dumps([])
+        if not question:
+            return json.dumps([])
 
-    data = dict(question)
-    return data
+        data = dict(question)
+        return data
+    finally:
+        await db_release(conn)
 
 
 async def question_comments(question_id):
@@ -246,7 +274,7 @@ async def question_comments(question_id):
     except Exception:
         return json.dumps([])
     finally:
-        await conn.close()
+        await db_release(conn)
 
 
 async def random_question():
@@ -290,7 +318,7 @@ async def next_question(question_id, session_id, direction):
     except Exception:
         return []
     finally:
-        await conn.close()
+        await db_release(conn)
 
 
 def embedding_api(input_text):
@@ -298,33 +326,7 @@ def embedding_api(input_text):
     return response["data"][0]["embedding"]
 
 
-# async def respond_to_question_callback(conn, pid, channel, payload):
-#    logger = setup_logging()
-#    logger.debug("beginning response callback")
-#    question = await answer_next(conn)
-#    if question:
-#        await respond_to_question(conn, question)
-#
-#
-# async def respond():
-#    logger = setup_logging()
-#    logger.debug("beginning response")
-#    conn = await db_connect2()
-#    await conn.add_listener("new_question", respond_to_question_callback)
-#    logger.debug("listner added in respond function")
-#
-#    question = await answer_next(conn)
-#    while question:
-#        question = await answer_next(conn)
-#        if question:
-#            await respond_to_question(conn, question)
-#
-#    event = asyncio.Event()
-#    await event.wait()
-
-
 async def respond(question_id):
-    logger = setup_logging()
     logger.debug(f"beginning response: {question_id}")
     if not validate_key(question_id):
         return {"error": "invalid question_id"}
@@ -332,18 +334,19 @@ async def respond(question_id):
     if not question:
         return {"error": "invalid question_id"}
 
-    conn = await db_connect2()
-    question = await respond_to_question(conn, question)
-    logger.debug(f"response recieved: {question_id}")
-    return question
+    try:
+        conn = await db_connect2()
+        question = await respond_to_question(conn, question)
+        logger.debug(f"response recieved: {question_id}")
+        return question
+    finally:
+        await db_release(conn)
 
 
 async def respond_to_question(conn, data):
     user_message = data["question"]
     with open("data/system_prompt.txt", "r") as file:
         system_prompt = file.read()
-
-    logger = setup_logging()
 
     question_id = data["question_id"]
 
@@ -397,48 +400,49 @@ async def respond_to_question(conn, data):
             title,
             question_id,
         )
+    return await simplified_question(question_id)
 
-        with open("data/question_functions.json", "r") as file:
-            functions = json.load(file)
 
-        logger.debug("begin function call to openAI")
-        function_message = await asyncio.to_thread(
-            openai.ChatCompletion.create,
-            model="gpt-3.5-turbo",
-            messages=messages,
-            functions=functions,
-            function_call={"name": "extract_data"},
+async def question_function_call(conn, data):
+    with open("data/question_functions.json", "r") as file:
+        functions = json.load(file)
+
+    logger.debug("begin function call to openAI")
+    function_message = await asyncio.to_thread(
+        openai.ChatCompletion.create,
+        model="gpt-3.5-turbo",
+        messages=messages,
+        functions=functions,
+        function_call={"name": "extract_data"},
+    )
+
+    function_message = function_message["choices"][0]["message"]
+
+    if function_message.get("function_call"):
+        function_response = json.loads(function_message["function_call"]["arguments"])
+        description = function_response["description"]
+        media = function_response["media"]
+
+        if len(title) == 0:
+            # if there was a previous title failure....
+            title = function_response["title"]
+
+        try:
+            logger.debug("begin stability ai image generation")
+            image_url = await asyncio.to_thread(stability_image, title, question_id)
+        except Exception:
+            logger.debug("begin dall-e image generation")
+            image_url = await asyncio.to_thread(openai_image, title, question_id)
+
+        logger.debug("begin saving image_url")
+        await conn.execute(
+            "update question set title = $1, description = $2, image_url = $3, media = $4 where question_id = $5",
+            title,
+            description,
+            image_url,
+            json.dumps(media),
+            question_id,
         )
-
-        function_message = function_message["choices"][0]["message"]
-
-        if function_message.get("function_call"):
-            function_response = json.loads(
-                function_message["function_call"]["arguments"]
-            )
-            description = function_response["description"]
-            media = function_response["media"]
-
-            if len(title) == 0:
-                # if there was a previous title failure....
-                title = function_response["title"]
-
-            try:
-                logger.debug("begin stability ai image generation")
-                image_url = await asyncio.to_thread(stability_image, title, question_id)
-            except Exception:
-                logger.debug("begin dall-e image generation")
-                image_url = await asyncio.to_thread(openai_image, title, question_id)
-
-            logger.debug("begin saving image_url")
-            await conn.execute(
-                "update question set title = $1, description = $2, image_url = $3, media = $4 where question_id = $5",
-                title,
-                description,
-                image_url,
-                json.dumps(media),
-                question_id,
-            )
 
     logger.info(f"bot-e response complete for {question_id}")
     return await simplified_question(question_id)

@@ -16,10 +16,12 @@ router.post('/',
   async (req, res) => {  // <-- Make the callback async
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      //console.debug(errors)
       // There are errors. Render the form again with sanitized values and error messages.
       res.json({ success: false });
     }
     else {
+      //console.debug('entering form processing')
       try {
         // Extract the reCAPTCHA token from the request
         const recaptchaToken = req.body["recaptcha_token"];
@@ -33,6 +35,7 @@ router.post('/',
         const verificationURL = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
         const verificationResponse = await axios.post(verificationURL);
 
+        //console.debug(verificationResponse.data.success)
         // Check if the verification was successful
         if (verificationResponse.data.success) {
           if (verificationResponse.data.score > 0.5) {
