@@ -22,10 +22,13 @@ const port = process.env.PORT || 3000;
 var app = express();
 
 const sess = {
-  secret: 'keyboard cat',
+  secret: '15NFwmG4jKfkeyboardiJttzJFAU0AzsV3IG6KcBT_7xCb0vGvA',
   resave: false, // Set to false to avoid the deprecated warning
   saveUninitialized: true, // Set to true or false as needed
-  //cookie: {}
+  cookie: {
+    secure: app.get('env') === 'production', // Set to true in production, false in other environments
+    maxAge: null, // indefinite Session id
+  }
 };
 
 if (app.get('env') === 'production') {

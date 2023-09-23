@@ -17,11 +17,46 @@ import stability_sdk.interfaces.gooseai.generation.generation_pb2 as generation
 from config import OPENAI_API_KEY
 import asyncpg
 import asyncio
+import logging
 
 pool = None
 os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
 
 openai.api_key = OPENAI_API_KEY
+
+
+def setup_logging(level=logging.DEBUG):
+    """
+    Set up and configure a logging object.
+
+    Args:
+        level (int, optional): The log level (e.g., logging.INFO, logging.DEBUG).
+
+    Returns:
+        logging.Logger: A configured logging object.
+    """
+    environment = os.environ.get("APP_ENVIRONMENT", "dev")
+    if not level:
+        if environment == "prod":
+            level = logging.INFO
+        else:
+            level = logging.DEBUG
+
+    # Create a logging object
+    logger = logging.getLogger(__name__)
+    logger.setLevel(level)
+    log_file = "logs/bot-e.log"
+
+    # Create a formatter
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+
+    # Create a file handler (to write logs to a file)
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(level)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    return logger
 
 
 async def create_db_pool():
@@ -40,15 +75,16 @@ async def db_connect2():
     return await pool.acquire()
 
 
-async def new_question(conn, question):
+async def new_question(conn, question, session_id):
     question = question.strip()
-    if len(question) < 1:
+    if len(question) < 1 or len(session_id) < 1:
         return {}
 
     async with conn.transaction():
         result = await conn.fetchrow(
-            "INSERT INTO question (question) VALUES ($1) RETURNING question_id, question",
+            "INSERT INTO question (question, creator_session_id) VALUES ($1, $2) RETURNING question_id, question, creator_session_id",
             question,
+            session_id,
         )
 
     return dict(result)
@@ -77,9 +113,9 @@ async def annotate_question(conn, question):
         )
 
 
-async def post_question(question):
+async def post_question(question, session_id):
     conn = await db_connect2()
-    question_record = await new_question(conn, question)
+    question_record = await new_question(conn, question, session_id)
     await annotate_question(conn, question_record)
     return question_record
 
@@ -161,6 +197,7 @@ async def simplified_question(question_id):
             media, 
             title, 
             description, 
+            creator_session_id,
             TO_CHAR(added_at, 'YYYY-MM-DD HH24:MI:SS') AS added_at
         FROM question
         WHERE question_id = $1
@@ -261,17 +298,44 @@ def embedding_api(input_text):
     return response["data"][0]["embedding"]
 
 
-async def respond_to_question_callback(conn, pid, channel, payload):
-    question = await answer_next(conn)
-    if question:
-        await respond_to_question(conn, question)
+# async def respond_to_question_callback(conn, pid, channel, payload):
+#    logger = setup_logging()
+#    logger.debug("beginning response callback")
+#    question = await answer_next(conn)
+#    if question:
+#        await respond_to_question(conn, question)
+#
+#
+# async def respond():
+#    logger = setup_logging()
+#    logger.debug("beginning response")
+#    conn = await db_connect2()
+#    await conn.add_listener("new_question", respond_to_question_callback)
+#    logger.debug("listner added in respond function")
+#
+#    question = await answer_next(conn)
+#    while question:
+#        question = await answer_next(conn)
+#        if question:
+#            await respond_to_question(conn, question)
+#
+#    event = asyncio.Event()
+#    await event.wait()
 
 
-async def respond():
+async def respond(question_id):
+    logger = setup_logging()
+    logger.debug(f"beginning response: {question_id}")
+    if not validate_key(question_id):
+        return {"error": "invalid question_id"}
+    question = await simplified_question(question_id)
+    if not question:
+        return {"error": "invalid question_id"}
+
     conn = await db_connect2()
-    await conn.add_listener("new_question", respond_to_question_callback)
-    event = asyncio.Event()
-    await event.wait()
+    question = await respond_to_question(conn, question)
+    logger.debug(f"response recieved: {question_id}")
+    return question
 
 
 async def respond_to_question(conn, data):
@@ -279,7 +343,11 @@ async def respond_to_question(conn, data):
     with open("data/system_prompt.txt", "r") as file:
         system_prompt = file.read()
 
+    logger = setup_logging()
+
     question_id = data["question_id"]
+
+    logger.debug(f"beginning response to question {question_id}")
 
     system_message = f"{system_prompt}"
 
@@ -294,10 +362,13 @@ async def respond_to_question(conn, data):
         },
     ]
 
-    # Make an asynchronous call to OpenAI
+    logger.debug("begin openai chat completion")
+
     completion = await asyncio.to_thread(
         openai.ChatCompletion.create, model="gpt-3.5-turbo", messages=messages
     )
+
+    logger.debug("received openai chat completion")
 
     messages.append(completion["choices"][0]["message"])
 
@@ -312,10 +383,11 @@ async def respond_to_question(conn, data):
     try:
         title = title_line.split(":", 1)[1].strip()
     except IndexError:
+        logger.warn("title not recieved in chat completion")
         title = ""
         rest_of_answer = response_message
 
-    # Establish an asyncpg connection
+    logger.debug("begin saving data")
     async with conn.transaction():
         # Execute SQL statements using asyncpg
         await conn.execute(
@@ -329,7 +401,7 @@ async def respond_to_question(conn, data):
         with open("data/question_functions.json", "r") as file:
             functions = json.load(file)
 
-        # Make an asynchronous call to OpenAI for function completion
+        logger.debug("begin function call to openAI")
         function_message = await asyncio.to_thread(
             openai.ChatCompletion.create,
             model="gpt-3.5-turbo",
@@ -352,10 +424,13 @@ async def respond_to_question(conn, data):
                 title = function_response["title"]
 
             try:
+                logger.debug("begin stability ai image generation")
                 image_url = await asyncio.to_thread(stability_image, title, question_id)
             except Exception:
+                logger.debug("begin dall-e image generation")
                 image_url = await asyncio.to_thread(openai_image, title, question_id)
 
+            logger.debug("begin saving image_url")
             await conn.execute(
                 "update question set title = $1, description = $2, image_url = $3, media = $4 where question_id = $5",
                 title,
@@ -365,7 +440,7 @@ async def respond_to_question(conn, data):
                 question_id,
             )
 
-    # TODO: change this to simplified_question()
+    logger.info(f"bot-e response complete for {question_id}")
     return await simplified_question(question_id)
 
 

@@ -41,6 +41,7 @@ router.post('/',
               //console.log("reCAPTCHA Score:", verificationResponse.data.score);
               try {
                 const apiResponse = await axios.post(`${apiServer}/ask`, { question: req.body.question, session_id: sessionId  });
+                console.debug('API Response:', apiResponse.data);
                 res.redirect("/question/" + apiResponse.data['question_id']);
               } catch (err) {
                 res.render('index', { title: 'Bot-E', errors: [err] });

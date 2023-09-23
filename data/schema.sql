@@ -1,32 +1,30 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
 
--- Function to generate a unique key for the 'question_id' column in 'question' table
--- Inspired by youtube video id
 CREATE OR REPLACE FUNCTION generateKey()
 RETURNS TEXT
 LANGUAGE plpgsql
 AS $$
 DECLARE
   length INTEGER := 11;
-  chars TEXT := '-_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  chars TEXT := '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-';
   key TEXT := '';
   randomIndex INTEGER;
   keyExists BOOLEAN;
 BEGIN
   LOOP
-    -- Generate the first character of the key, excluding "_" and "-" from the first position
-    randomIndex := (random() * (length(chars) - 3)) + 2;
+    -- Generate the first character of the key (excluding "_" and "-")
+    randomIndex := (random() * (length(chars) - 2)) + 2;
     key := substr(chars, randomIndex, 1);
 
-    -- Generate the rest of the characters for the key
+    -- Generate the middle characters for the key
     FOR i IN 1..length - 2 LOOP
       randomIndex := random() * length(chars);
       key := key || substr(chars, randomIndex + 1, 1);
     END LOOP;
 
-    -- Generate the last character of the key, excluding "_" and "-" from the last position
-    randomIndex := (random() * (length(chars) - 3)) + 2;
+    -- Generate the last character of the key (excluding "_" and "-")
+    randomIndex := (random() * (length(chars) - 2)) + 2;
     key := key || substr(chars, randomIndex, 1);
 
     -- Check if the generated key already exists in the 'question' table
@@ -38,6 +36,7 @@ BEGIN
   RETURN key;
 END;
 $$;
+
 
 -- Drop the 'question' table and its dependencies if they exist
 DROP TABLE IF EXISTS question CASCADE;
@@ -89,8 +88,8 @@ EXECUTE FUNCTION update_search_vector();
 CREATE OR REPLACE FUNCTION check_question_id_length()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF LENGTH(NEW.question_id) <> 11 THEN
-        RAISE EXCEPTION 'question_id must be exactly 11 characters';
+    IF CHAR_LENGTH(NEW.question_id) <> 11 THEN
+        NEW.question_id := generateKey();
     END IF;
     RETURN NEW;
 END;

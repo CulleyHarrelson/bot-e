@@ -29,10 +29,8 @@ router.get('/:question_id', async function(req, res, next) {
     if (session_id == creator_session_id) {
       creator = 'YES';
     }
-    console.log(`session_id: ${session_id}`)
-    console.log(`creator_session_id: ${creator_session_id}`)
-    console.log(creator)
-    //console.log(questionDetails.creator_session_id)
+    console.debug(`session_id: ${session_id}`)
+    console.debug(`creator_session_id: ${creator_session_id}`)
 
     let question = questionDetails.question;
     if (question) {

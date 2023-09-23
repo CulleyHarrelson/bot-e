@@ -6,15 +6,13 @@
 - Finish Privacy Policy 
 - change image_url to use full domain
 - Build Server
-    - pm2
-    - Gunicorn
-        - aiohttp
+    - logging
+    - load testing
+    - reboot
+        - pm2
+        - supervisord
     - Postgresql 
         - backups
-    - bot-e Daemon
-        - asyncio
-        - logging
-        - Supervisor
 - Transfer domain
     - Oct 4
 - Add LLC stuff

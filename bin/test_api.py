@@ -6,7 +6,7 @@ import unittest
 class APITestCase(unittest.TestCase):
     def setUp(self):
         # self.api_url = "http://snowball.bot-e.com"
-        self.api_url = "http://127.0.0.1:6464"
+        self.api_url = "http://localhost:6464"
         self.headers = {"Content-Type": "application/json"}
 
     def test_api_endpoint(self):

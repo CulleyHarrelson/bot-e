@@ -6,10 +6,11 @@ from dateutil.parser import isoparse
 import re
 from html import unescape
 import asyncio
-import json
+
+# import json
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+log = bote.setup_logging(level=logging.DEBUG)
 
 
 async def contains_html(input_string):
@@ -22,33 +23,6 @@ async def contains_url(input_string):
     url_pattern = re.compile(r"https?://\S+|www\.\S+", re.IGNORECASE)
     matches = url_pattern.findall(input_string)
     return bool(matches)
-
-
-async def trending(request):
-    try:
-        start_date = request.query.get("start_date")
-
-        if not start_date:
-            raise web.HTTPBadRequest(text="Missing 'start_date' query parameter.")
-
-        try:
-            start_date_parsed = isoparse(start_date)
-        except ValueError:
-            raise web.HTTPBadRequest(
-                text="Invalid date format. Please use ISO 8601 format (YYYY-MM-DD)."
-            )
-
-        if not isinstance(start_date_parsed, datetime):
-            raise ValueError("Invalid date format")
-
-        # Assuming `bote.trending` is an async function, await it
-        result = await bote.trending(start_date_parsed)
-
-        # Use web.json_response to return JSON responses
-        return web.json_response(result)
-
-    except Exception as e:
-        return web.json_response({"error": str(e)}, status=500)
 
 
 async def search(request):
@@ -85,16 +59,22 @@ async def get_question_by_id(request):
     try:
         # Get the rows from the database
         question_id = request.match_info["question_id"]
-        # logging.debug(f"Fetching question with ID: {question_id}")
+        log.debug(f"Fetching question with ID: {question_id}")
         question = await bote.simplified_question(question_id)
-
+        if question:
+            log.debug("found question")
+        else:
+            log.debug(f"question not found: {question_id}")
         response = web.json_response(question)
         response.headers["Content-Type"] = "application/json"
 
         return response
 
     except Exception as e:
-        # logging.exception("Error occurred while processing the request.")
+        if question_id:
+            log.warn(f"Error occurred while getting data for question {question_id}")
+        else:
+            log.critical("no question id to look up in the database.")
         return web.json_response({"error": str(e)}, status=500)
 
 
@@ -111,6 +91,7 @@ async def next_question(request):
         direction = data["direction"]
         question_id = data["question_id"]
         session_id = data["session_id"]
+        log.debug(question_id)
 
         if direction == "random":
             random_question = await bote.random_question()
@@ -139,19 +120,41 @@ async def next_question(request):
 
 async def post_question(request):
     try:
+        log.debug("in post question here ")
         data = await request.json()
+        log.debug("begging post question function in api script")
         if "question" not in data or not data["question"]:
             return web.json_response({"error": "question is required."}, status=400)
+        if "session_id" not in data or not data["session_id"]:
+            return web.json_response({"error": "session_id is required."}, status=400)
 
         question = data["question"]
+        session_id = data["session_id"]
 
-        # logging.debug(f"new question: {question}")
+        logging.debug(f"new question for session: {session_id}")
 
-        result = await bote.post_question(question)
+        result = await bote.post_question(question, session_id)
         return web.json_response(result)
 
     except Exception as e:
-        # logging.exception("Error occurred while processing the request.")
+        return web.json_response({"error": str(e)}), 500
+
+
+async def respond(request):
+    try:
+        log.debug("in respond")
+        data = await request.json()
+        if "question_id" not in data or not data["question_id"]:
+            return web.json_response({"error": "question_id is required."}, status=400)
+
+        question_id = data["question_id"]
+
+        logging.debug(f"responding: {question_id}")
+
+        result = await bote.respond(question_id)
+        return web.json_response(result)
+
+    except Exception as e:
         return web.json_response({"error": str(e)}), 500
 
 
@@ -190,16 +193,41 @@ async def add_comment(request):
 
 async def init_app():
     app = web.Application()
-    # Add routes here
-    app.router.add_get("/trending/{start_date}", trending)
+    # trending is not currently functional
+    # app.router.add_get("/trending/{start_date}", trending)
     app.router.add_get("/search/{search_for}", search)
     app.router.add_get("/comments/{question_id}", get_question_comments_id)
     app.router.add_get("/question/{question_id}", get_question_by_id)
     app.router.add_post("/next_question", next_question)
     app.router.add_post("/ask", post_question)
+    app.router.add_post("/respond", respond)
     app.router.add_post("/add_comment", add_comment)
     return app
 
 
 loop = asyncio.get_event_loop()
 app = loop.run_until_complete(init_app())
+
+# tasync def trending(request):
+#    try:
+#        start_date = request.query.get("start_date")
+#
+#        if not start_date:
+#            raise web.HTTPBadRequest(text="Missing 'start_date' query parameter.")
+#
+#        try:
+#            start_date_parsed = isoparse(start_date)
+#        except ValueError:
+#            raise web.HTTPBadRequest(
+#                text="Invalid date format. Please use ISO 8601 format (YYYY-MM-DD)."
+#            )
+#
+#        if not isinstance(start_date_parsed, datetime):
+#            raise ValueError("Invalid date format")
+#
+#        result = await bote.trending(start_date_parsed)
+#
+#        return web.json_response(result)
+#
+#    except Exception as e:
+#        return web.json_response({"error": str(e)}, status=500)

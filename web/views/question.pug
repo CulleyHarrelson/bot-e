@@ -242,14 +242,28 @@ block content
                         i !{comment.added_at} - !{comment.comment}
                     
 
-      if false
-        each item in media
-          if item.media_type == "song"
-            .card
-              .card-divider
-                | !{item.media_type}: !{item.correlation}
-              .card-section
-                .responsive-embed
-                  iframe(src=`https://www.youtube.com/embed/${item.videoId}` width="560" height="315" frameborder="0" allowfullscreen)
+  if !answer
+    script.
+      question_id = "#{questionId}";
+      console.log(question_id);
+      fetch('http://localhost:6464/respond', { 
+        method: 'POST',
+        body: JSON.stringify({question_id: question_id}),
+        headers: {
+          'Content-Type': 'application/json', 
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        if (data.error) {
+          showCallout(data.error, 'error')
+        } else {
+          location.reload(true);
+        }
+      })
+      .catch(error => {
+        showCallout('response failed', 'error')
+      });
   
   +siteFooter
