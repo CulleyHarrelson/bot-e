@@ -516,7 +516,7 @@ def openai_image(title, question_id):
         response = openai.Image.create(
             prompt=f"Generate an abstract image representing: {title}",
             n=1,
-            size="256x256",
+            size="512x512",
         )
         image_url = response["data"][0]["url"]
         base_dir = os.path.dirname(os.path.abspath(__file__))

@@ -6,7 +6,8 @@ from dateutil.parser import isoparse
 import re
 from html import unescape
 import asyncio
-import aiohttp_cors
+
+# import aiohttp_cors
 
 
 async def contains_html(input_string):
@@ -57,11 +58,6 @@ async def get_question_by_id(request):
         question_id = request.match_info["question_id"]
         bote.debug(f"Fetching question with ID: {question_id}")
         question = await bote.simplified_question(question_id)
-        if question:
-            bote.debug("found question")
-
-        else:
-            bote.debug(f"question not found: {question_id}")
         response = web.json_response(question)
         response.headers["Content-Type"] = "application/json"
 
@@ -159,7 +155,7 @@ async def respond(request):
             bote.debug(f"obtaining question lock: {question_id}")
             lock = bote.row_lock(f"A-{question_id}")
             if lock:
-                bote.debug(f"responding api call: {question_id}")
+                bote.debug(f"respond api call: {question_id}")
                 result = await bote.respond(question_id)
                 return web.json_response(result)
             else:
@@ -220,25 +216,23 @@ loop = asyncio.get_event_loop()
 app = loop.run_until_complete(init_app())
 
 
-cors = aiohttp_cors.setup(app)
-
-# Define the resource and route for the /respond endpoint
-resource = cors.add(app.router.add_resource("/respond"))
-# Configure CORS for the POST route to allow all origins and methods
-route = cors.add(
-    resource.add_route("POST", respond),
-    {
-        "*": aiohttp_cors.ResourceOptions(
-            allow_credentials=True,  # Allow credentials (cookies, authentication)
-            expose_headers=("X-Custom-Header",),  # Expose custom headers
-            allow_headers=(
-                "Content-Type",
-                "Authorization",
-            ),  # Allow headers in requests
-            max_age=3600,  # Set the maximum age for preflight requests (in seconds)
-        )
-    },
-)
+# cors = aiohttp_cors.setup(app)
+#
+# resource = cors.add(app.router.add_resource("/respond"))
+# route = cors.add(
+#    resource.add_route("POST", respond),
+#    {
+#        "*": aiohttp_cors.ResourceOptions(
+#            allow_credentials=True,  # Allow credentials (cookies, authentication)
+#            expose_headers=("X-Custom-Header",),  # Expose custom headers
+#            allow_headers=(
+#                "Content-Type",
+#                "Authorization",
+#            ),  # Allow headers in requests
+#            max_age=3600,  # Set the maximum age for preflight requests (in seconds)
+#        )
+#    },
+# )
 
 
 # tasync def trending(request):
