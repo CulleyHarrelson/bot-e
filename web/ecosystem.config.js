@@ -12,6 +12,8 @@ module.exports = {
         DEBUG: '*', 
       },
       log_level: process.env.BOTE_ENV === 'development' ? 'debug' : 'info',
+      error_file: `${process.env.BOTE_PATH}/logs/pm2_error.log`,
+      out_file: `${process.env.BOTE_PATH}/logs/pm2_output.log`,
     },
   ],
 };

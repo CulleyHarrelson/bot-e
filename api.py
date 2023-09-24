@@ -139,17 +139,31 @@ async def post_question(request):
 
 async def respond(request):
     try:
-        bote.debug("in respond")
+        bote.debug("begin respond api call")
         data = await request.json()
         if "question_id" not in data or not data["question_id"]:
             return web.json_response({"error": "question_id is required."}, status=400)
 
         question_id = data["question_id"]
 
-        bote.debug(f"responding: {question_id}")
-
-        result = await bote.respond(question_id)
-        return web.json_response(result)
+        if "enrich" in data:
+            bote.debug(f"obtaining enrich lock: {question_id}")
+            lock = bote.row_lock(f"E-{question_id}")
+            if lock:
+                bote.debug(f"responding enrich api call: {question_id}")
+                result = await bote.enrich_question(question_id)
+                return web.json_response(result)
+            else:
+                bote.debug(f"enrich api call locked: {question_id}")
+        else:
+            bote.debug(f"obtaining question lock: {question_id}")
+            lock = bote.row_lock(f"A-{question_id}")
+            if lock:
+                bote.debug(f"responding api call: {question_id}")
+                result = await bote.respond(question_id)
+                return web.json_response(result)
+            else:
+                bote.debug(f"respond api call locked: {question_id}")
 
     except Exception as e:
         return web.json_response({"error": str(e)}), 500
@@ -210,10 +224,11 @@ cors = aiohttp_cors.setup(app)
 
 # Define the resource and route for the /respond endpoint
 resource = cors.add(app.router.add_resource("/respond"))
+# Configure CORS for the POST route to allow all origins and methods
 route = cors.add(
     resource.add_route("POST", respond),
     {
-        "http://localhost:3000": aiohttp_cors.ResourceOptions(
+        "*": aiohttp_cors.ResourceOptions(
             allow_credentials=True,  # Allow credentials (cookies, authentication)
             expose_headers=("X-Custom-Header",),  # Expose custom headers
             allow_headers=(

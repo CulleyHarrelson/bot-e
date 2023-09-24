@@ -49,6 +49,7 @@ CREATE TABLE question (
     answer TEXT NULL, 
     title TEXT NULL, 
     description TEXT NULL, 
+    creator_session_id TEXT NULL, 
     added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, -- Timestamp when the record is added
     modified_at TIMESTAMP WITH TIME ZONE,
     hashtags TEXT[] NULL, -- Array of hashtags (nullable)
@@ -164,4 +165,11 @@ CREATE INDEX idx_question_comment_parent ON question_comment (parent_comment_id)
 CREATE INDEX idx_question_comment_date ON question_comment (added_at);
 CREATE INDEX idx_question_comment_session ON question_comment (session_id);
 
+
+CREATE TABLE row_lock (
+  row_key TEXT NOT NULL,
+  added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_question_lock ON row_lock (row_key, added_at);
 

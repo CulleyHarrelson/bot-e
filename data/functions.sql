@@ -178,3 +178,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION lock_row(row_key TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE
+    recent_lock_count INT;
+BEGIN
+    -- Check if there are any records with the same question_id added within the last two minutes
+    SELECT COUNT(*)
+    INTO recent_lock_count
+    FROM row_lock
+    WHERE row_key = $1
+      AND added_at >= NOW() - INTERVAL '2 minutes';
+
+    -- If there are recent locks, return FALSE
+    IF recent_lock_count > 0 THEN
+        RETURN FALSE;
+    ELSE
+        -- Insert a new record into the question_lock table
+        INSERT INTO row_lock (row_key)
+        VALUES ($1);
+
+        -- Return TRUE to indicate success
+        RETURN TRUE;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+

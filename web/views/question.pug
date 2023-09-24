@@ -138,10 +138,10 @@ block content
   .flex-container.align-center.margin-3
     .small-up-1.medium-up-2
       if !answer
-        .card
+        .card(id="answerCard")
           .card-divider
             | Answer
-          .card-section
+          .card-section(id="answer", name="answer")
             p.cell.small-12 It can take up to a minute to generate a response.  We are working hard to incorporate a streaming response that starts immediately!  Meanwhile, refreshing the page or navigating away mess up the response, so please be patient! 
             .cell.small-12
               .progress-container
@@ -150,10 +150,9 @@ block content
             .cell.small-12
               div.text-center 
                 div(style="padding-top: 20px;") 
-                  img(id="waitingGif" src="" alt="GIF Image")
+                  img(id="waitingGif" src="" alt="waiting image")
                   script.
-                    const gif_codes = ['l0HlBO7eyXzSZkJri', 'QPQ3xlJhqR1BXl89RG', '26BRuo6sLetdllPAQ', 'SWVzkIlHdEckF81gnA', 'PCvkgunX9ZbEEyfTQH', 'tXL4FHPSnVJ0A', 'ohdmJuMIE08Ld7Jj0s', 'FoH28ucxZFJZu', 'QhjR3MG9ZFfjB6BtIZ', '229Pljon180JF07BaX', 'wbXkGmM7YMgpCggnPB', '26his5i9YJTqsqCyY', 'QBd2kLB5qDmysEXre9', 'IcoMfdWwY26mBcX008', '2tOsjtp4xFgD6pc48U', '4SY40ExbxfyOyD91VI', 'PWfHC8ogZpWcE', 'hCiQVo1dzVwPu', 'Qt1jk5Q49C3h5CrlBe', 'lP4jmO461gq9uLzzYc', 'J6ctgPvnDpDi0', '2WGDUTmsB4DzFuvZ2t', 'u5eXlkXWkrITm', 'd2qJhxeaaWXPG', 'hFmIU5GQF18Aw', 'QUmpqPoJ886Iw', 'MgRKCBGvlpqTENUzWk', 'ZXKZWB13D6gFO', 'xf20D8HzvTQzu', 'ZR8teuiCs3AkSkzjnG', 'deamFJOd89iTk0xYpR', 'HxPx004f5fFXhpQDvH', '3kACvwjyzgOdqE3GWT', 'GiWEowj3nQv9C', 'E4pi99w43ecCV1n9jF', '7zrZAg61HEsYDmOvto', 'F77lbfwEAnYNG', 'ZcnwOpPTw9Ucw', 'BAYZwXqJ3zQnC', '26n6xBpxNXExDfuKc', 'QHtZ75OT07KKKxLuJ5', 'xA1PKCt00IDew', '3oriNSGVr5DmGh6ZTq', 'l0ExtLXXJ5FiBozPa', '3otPouzI8Zjnpc08RG', 'l4HnKwiJJaJQB04Zq', '2fjjoFrNS4XzW', 'xUPGcdy9cg74187mco', 'gZ0GEz2HefV4s', '3o85xscgnCWS8Xxqik', 'hiu4RJvbEBUVq', 'o3yJlZPX0uV4fkGfvd', 'a6HJquvTVsBws', 'SiM5c8aqHwqcfD9JIG', 'j9UHmOnjCNrIDZRoTe', '1wq8UZXyxY4UiiovWP', 'kVRBvsiOyBM8o', '3o7TKxOhkp8gO0LXMI', '3oz8xwjA7yu1VGIaac', 'xTiTnirBmnXzvbCzHG', 'aqFRBqGjnznd6', '3orieVVxVESoH7f5yo', '13uaMxgBhGP9ba', 'l5u6SuofjVf56', 'l3q2NsJfJxVuOv3by', 'KGHua3DXhxTS4MBHrK', 'YpxH6P6nnyV7yWapGa', 'poLAPeLtXo778QhYIy', 'T99wGqreuiWFc83NU2', 'YZFO68qCW9KtG', 'RPhZ5IZfA7Ia7kyApl', 'l0MYRfGACGXlqL86A', '10LCn5MSXM8d3O', 'KAnPj9HruovDi', '3oEdv9pgtUVVYdpaY8', 'bCwB9W585jiYU', '10THtJ9zWzPDQQ', 'SPwq6rg2vcig8', 'phY1SBXy4y4Io', 'gKIyqq4JESg4p3RW8V', 'Ep8H7w4ayN2k3XWz2x', 'OD2h5eK4XZI5yQ8iQo', 'xT9IgAr64UiCRYbKco', 'xT0BKtgZQfFRB8pegg'];
-
+                    const gif_codes = ['l0HlBO7eyXzSZkJri', 'QPQ3xlJhqR1BXl89RG', '26BRuo6sLetdllPAQ', 'SWVzkIlHdEckF81gnA', 'PCvkgunX9ZbEEyfTQH', 'tXL4FHPSnVJ0A', 'ohdmJuMIE08Ld7Jj0s', 'FoH28ucxZFJZu', 'QhjR3MG9ZFfjB6BtIZ', '229Pljon180JF07BaX', 'wbXkGmM7YMgpCggnPB', '26his5i9YJTqsqCyY', 'QBd2kLB5qDmysEXre9', 'IcoMfdWwY26mBcX008', '2tOsjtp4xFgD6pc48U', '4SY40ExbxfyOyD91VI', 'PWfHC8ogZpWcE', 'hCiQVo1dzVwPu', 'Qt1jk5Q49C3h5CrlBe', 'lP4jmO461gq9uLzzYc', 'J6ctgPvnDpDi0', '2WGDUTmsB4DzFuvZ2t', 'u5eXlkXWkrITm', 'd2qJhxeaaWXPG', 'hFmIU5GQF18Aw', 'QUmpqPoJ886Iw', 'MgRKCBGvlpqTENUzWk', 'ZXKZWB13D6gFO', 'xf20D8HzvTQzu', 'ZR8teuiCs3AkSkzjnG', 'deamFJOd89iTk0xYpR', 'HxPx004f5fFXhpQDvH', '3kACvwjyzgOdqE3GWT', 'GiWEowj3nQv9C', 'E4pi99w43ecCV1n9jF', '7zrZAg61HEsYDmOvto', 'F77lbfwEAnYNG', 'ZcnwOpPTw9Ucw', 'BAYZwXqJ3zQnC', '26n6xBpxNXExDfuKc', 'QHtZ75OT07KKKxLuJ5', 'xA1PKCt00IDew', '3oriNSGVr5DmGh6ZTq', 'l0ExtLXXJ5FiBozPa', '3otPouzI8Zjnpc08RG', 'l4HnKwiJJaJQB04Zq', '2fjjoFrNS4XzW', 'xUPGcdy9cg74187mco', 'gZ0GEz2HefV4s', '3o85xscgnCWS8Xxqik', 'hiu4RJvbEBUVq', 'o3yJlZPX0uV4fkGfvd', 'a6HJquvTVsBws', 'SiM5c8aqHwqcfD9JIG', 'j9UHmOnjCNrIDZRoTe', '1wq8UZXyxY4UiiovWP', 'kVRBvsiOyBM8o', '3o7TKxOhkp8gO0LXMI', '3oz8xwjA7yu1VGIaac', 'xTiTnirBmnXzvbCzHG', 'aqFRBqGjnznd6', '3orieVVxVESoH7f5yo', '13uaMxgBhGP9ba', 'l5u6SuofjVf56', 'l3q2NsJfJxVuOv3by', 'KGHua3DXhxTS4MBHrK', 'YpxH6P6nnyV7yWapGa', 'poLAPeLtXo778QhYIy', 'T99wGqreuiWFc83NU2', 'YZFO68qCW9KtG', 'RPhZ5IZfA7Ia7kyApl', 'l0MYRfGACGXlqL86A', '10LCn5MSXM8d3O', 'KAnPj9HruovDi', '3oEdv9pgtUVVYdpaY8', 'bCwB9W585jiYU', '10THtJ9zWzPDQQ', 'SPwq6rg2vcig8', 'phY1SBXy4y4Io', 'gKIyqq4JESg4p3RW8V', 'Ep8H7w4ayN2k3XWz2x', 'OD2h5eK4XZI5yQ8iQo', 'xT9IgAr64UiCRYbKco', 'xT0BKtgZQfFRB8pegg', 'OlUenwp8CJCSs', 'RMhbmeqWeOBQIiQkS4', 'elbWbddr5N0banciNY', '5xaOcLvROln5TmaaVOM', 'AMSUrxqH4vxPW', '3o6ZtrcvLygH8a5qi4', 'Y1C26dVWOOz1C', '1pR5R2WMCoMcU', 'l3V0Brmdx3M7xqFiw', 'esUOS8Ztwlifu', 'SQw2RHDXvyswIA9FSl', 'OXDpkxTD2l9Icnqh6h', 'YnbGO92dcuCZ0kxWBj', 'xTiTntUt0miqJ4dvnW', 'zOD5XeexlbCoFWynhy', 'l2Sq7TXCIXsZV7n1K', 'l4Epl2MzXZW4mF15K', 'xUOwGj1jwTZq5Kh3Ko', 'xT8qB4EPeaBKjjYbZu', 'wzXrZ11zwTOMeLDYjI', 'pIEslLgiW7W0Wg0cgt', '4T9dXcA0mWnUPr6tcD', 'tU6zyp5ly12bm', '3ov9k6lsQ9kW7K30eQ', 'G8JShyA70Eh7G', 'l0HU3rCbqtK6xMi3K', '3o6gaXGkCL4WJW4Ap2', 'l3JDHv2xpLbQ7Tjdm', 'l0EwYmFzBJLBcbWgM', '26gR1iYzSqtzcta4E', 'gAkByFVxQx70c', 'J0IZzqRxvrcmdZ4LgD', 'MEF1VadKbQBdmd8LCn', 'YaO800uS4DjRNgjQWh', 'jFBDPMTZUFvt4N6mli', 'oW7cXqaVmt5EKQ48FQ', 'chbs0iCIdvbGirfLyv', 'l46CeDBwmtMi1ddkc', 'Hz2yOhN7Aapqnio0cb', 'ZA0GUadZdAqyWyUGdg', 'qSYeGGz7DtDEo9Htk0', 'BDQmMy3ZM8sgRNFkhe', 'l2JhtCMwgCLcRXmgg', '6vocLZfWqCexRghW6W'];
                     function getRandomGifCode() {
                       const randomIndex = Math.floor(Math.random() * gif_codes.length);
                       return gif_codes[randomIndex];
@@ -193,13 +192,13 @@ block content
           .card-section
             h4 !{title}
             if image_url
-              img(src=image_url width=256 height=256 alt=title)
+              img(id=question_image, src=image_url width=256 height=256 alt=title)
         .card
           .card-divider
             | Question
           .card-section
             p !{question}
-        .card
+        .card(id="answer")
           .card-divider
             | Answer
           .card-section
@@ -283,24 +282,43 @@ block content
   if !answer
     script.
       question_id = "#{questionId}";
-      fetch('http://localhost:6464/respond', { 
+      fetch('/respond', { 
         method: 'POST',
-        body: JSON.stringify({question_id: question_id}),
+        body: JSON.stringify({'question_id': question_id}),
         headers: {
           'Content-Type': 'application/json', 
         }
       })
       .then(response => response.json())
       .then(data => {
-        console.log(data);
-        if (data.error) {
-          showCallout(data.error, 'error')
+        if (data.success) {
+          window.location.reload();
         } else {
-          location.reload(true);
+          showCallout(data.error, 'error')
         }
       })
       .catch(error => {
         showCallout('response failed', 'error')
       });
-  
+  else if !image_url
+    script.
+      question_id = "#{questionId}";
+      fetch('/respond', { 
+        method: 'POST',
+        body: JSON.stringify({'question_id': question_id, 'enrich': question_id}),
+        headers: {
+          'Content-Type': 'application/json', 
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          showCallout(data.error, 'error')
+        }
+      })
+      .catch(error => {
+        showCallout('response failed', 'error')
+      });
   +siteFooter

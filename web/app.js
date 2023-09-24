@@ -16,6 +16,7 @@ var captchaRouter = require('./routes/recaptcha');
 var navigateRouter = require('./routes/navigate');
 var trendingRouter = require('./routes/trending');
 var commentRouter = require('./routes/comment');
+var respondRouter = require('./routes/respond');
 
 const port = process.env.PORT || 3000;
 
@@ -60,6 +61,7 @@ app.use('/about', aboutRouter);
 app.use('/search', searchRouter);
 app.use('/recaptcha', captchaRouter);
 app.use('/navigate', navigateRouter);
+app.use('/respond', respondRouter);
 app.use('/trending', trendingRouter);
 app.use('/comment', commentRouter);
 

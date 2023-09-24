@@ -204,9 +204,29 @@ async def trending(start_date):
         await db_release(conn)
 
 
-async def simplified_question(question_id):
+async def row_lock(row_key):
+    try:
+        conn = await db_connect2()
+
+        query = """
+            SELECT row_lock($1)
+            """
+
+        async with conn.transaction():
+            lock = await conn.fetchrow(query, row_key)
+
+        if not lock:
+            return False
+
+        data = dict(question)
+        return True
+    finally:
+        await db_release(conn)
+
+
+async def get_question(question_id, simplified=False):
     """
-    suface limited data to api
+    suface all question data
     """
     try:
         conn = await db_connect2()
@@ -214,20 +234,27 @@ async def simplified_question(question_id):
         if not validate_key(question_id):
             return json.dumps([])
 
-        query = """
-            SELECT 
-                question_id, 
-                question, 
-                answer, 
-                full_image_url(image_url) AS image_url, 
-                media, 
-                title, 
-                description, 
-                creator_session_id,
-                TO_CHAR(added_at, 'YYYY-MM-DD HH24:MI:SS') AS added_at
-            FROM question
-            WHERE question_id = $1
-            """
+        if simplified:
+            query = """
+                SELECT 
+                    question_id, 
+                    question, 
+                    answer, 
+                    full_image_url(image_url) AS image_url, 
+                    media, 
+                    title, 
+                    description, 
+                    creator_session_id,
+                    TO_CHAR(added_at, 'YYYY-MM-DD HH24:MI:SS') AS added_at
+                FROM question
+                WHERE question_id = $1
+                """
+        else:
+            query = """
+                SELECT *
+                FROM question
+                WHERE question_id = $1
+                """
 
         async with conn.transaction():
             question = await conn.fetchrow(query, question_id)
@@ -239,6 +266,13 @@ async def simplified_question(question_id):
         return data
     finally:
         await db_release(conn)
+
+
+async def simplified_question(question_id):
+    """
+    suface limited data to api
+    """
+    return await get_question(question_id, simplified=True)
 
 
 async def question_comments(question_id):
@@ -403,7 +437,32 @@ async def respond_to_question(conn, data):
     return await simplified_question(question_id)
 
 
-async def question_function_call(conn, data):
+async def enrich_question(question_id):
+    question = await get_question(question_id)
+    system_message = question["system_prompt"]
+    user_message = question["question"]
+    assistant_message = question["answer"]
+    title = question["title"]
+
+    debug(title)
+    if not assistant_message:
+        return {"error": "questions must be answered before they can be enriched."}
+
+    messages = [
+        {
+            "role": "system",
+            "content": f"{system_message}",
+        },
+        {
+            "role": "user",
+            "content": f"{user_message}",
+        },
+        {
+            "role": "assistant",
+            "content": f"{assistant_message}",
+        },
+    ]
+
     with open("data/question_functions.json", "r") as file:
         functions = json.load(file)
 
@@ -434,17 +493,21 @@ async def question_function_call(conn, data):
             logger.debug("begin dall-e image generation")
             image_url = await asyncio.to_thread(openai_image, title, question_id)
 
-        logger.debug("begin saving image_url")
-        await conn.execute(
-            "update question set title = $1, description = $2, image_url = $3, media = $4 where question_id = $5",
-            title,
-            description,
-            image_url,
-            json.dumps(media),
-            question_id,
-        )
+        logger.debug("begin saving enrichment data")
+        try:
+            conn = await db_connect2()
+            await conn.execute(
+                "update question set title = $1, description = $2, image_url = $3, media = $4 where question_id = $5",
+                title,
+                description,
+                image_url,
+                json.dumps(media),
+                question_id,
+            )
+        finally:
+            await db_release(conn)
 
-    logger.info(f"bot-e response complete for {question_id}")
+    logger.info(f"bot-e enrichment response complete for {question_id}")
     return await simplified_question(question_id)
 
 

@@ -4,7 +4,7 @@ const axios = require('axios');
 
 // Handle requests for /q/:question_id
 router.get('/:question_id', async function(req, res, next) {
-  console.debug('begin question route')
+  //console.debug('begin question route')
   try {
     const questionId = req.params.question_id;
     const session_id = req.sessionID;
@@ -14,7 +14,7 @@ router.get('/:question_id', async function(req, res, next) {
     // Make the first request to get question details
     const questionDetailsResponse = await axios.get(`${apiServer}/question/${questionId}`);
     const questionDetails = questionDetailsResponse.data; // Assuming the response contains the question details
-    console.debug(questionDetails)
+    //console.debug(questionDetails)
 
     // Make the second request to get comments data
     const commentsResponse = await axios.get(`${apiServer}/comments/${questionId}`);
@@ -31,8 +31,8 @@ router.get('/:question_id', async function(req, res, next) {
     if (session_id == creator_session_id) {
       creator = 'YES';
     }
-    console.debug(`session_id: ${session_id}`)
-    console.debug(`creator_session_id: ${creator_session_id}`)
+    //console.debug(`session_id: ${session_id}`)
+    //console.debug(`creator_session_id: ${creator_session_id}`)
 
 
     let question = questionDetails.question;
@@ -69,7 +69,7 @@ router.get('/:question_id', async function(req, res, next) {
       canonical,
       comments, // Include comments data
     };
-    console.debug(responseData)
+    //console.debug(responseData)
 
     // Render your template and pass the combined data
     res.render('question', responseData);
