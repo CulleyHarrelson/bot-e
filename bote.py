@@ -536,12 +536,14 @@ def openai_image(title, question_id):
 
 
 def stability_image(title, question_id):
+    logger.debug("begin stability_image function")
     stability_api = client.StabilityInference(
         key=os.environ["STABILITY_KEY"],
         verbose=True,  # Print debug messages.
         engine="stable-diffusion-xl-1024-v1-0",
     )
 
+    logger.debug("stability api initialized")
     answers = stability_api.generate(
         prompt=f"using two complimentary colors, create an image that will make people curious about this title: '{title}'. ",
         seed=4253978046,
