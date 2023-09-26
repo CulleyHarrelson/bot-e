@@ -9,7 +9,7 @@ mixin topBar
       ul.dropdown.menu(data-dropdown-menu)
         li.menu-text Bot-E
         li
-          a(href='/') new question
+          a.button.unstyled.hollow(style="border: none;", href='/') new question
         li
           form(id="random-form" method="post" action="/next_question")
             button.button.unstyled.hollow(style="border: none;", type="button", name="direction" value="random", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='randomForm', data-tooltip, tabindex="2", title="browse") browse
