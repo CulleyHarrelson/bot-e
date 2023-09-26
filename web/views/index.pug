@@ -24,7 +24,7 @@ block content
       div.cell.small-12(class="spacer")
       p.cell.small-12.text-center What's going on?
       form.cell.small-12.large-6(method="POST", action="/")
-        textarea(name="question", required, style="height: 200px; width: 100%;")
+        textarea(name="question", required, style="height: 200px; width: 100%;") #{question}
         div#recaptcha
         button.button.large.success(type="submit") Get Advice
   if errors

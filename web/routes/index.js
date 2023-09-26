@@ -44,20 +44,20 @@ router.post('/',
                 console.debug('API Response:', apiResponse.data);
                 res.redirect("/question/" + apiResponse.data['question_id']);
               } catch (err) {
-                res.render('index', { title: 'Bot-E', errors: [err] });
+                res.render('index', { title: 'Bot-E', question: req.body.question, errors: [err] });
               }
             } else {
-              res.render('index', { title: 'Bot-E', errors: ["CAPTCHA verification failed."] });
+              res.render('index', { title: 'Bot-E', question: req.body.question, errors: ["CAPTCHA verification failed."] });
             }
           } else {
               codes = verificationResponse.data.error-codes;
               // Handle the failed CAPTCHA verification
-              res.render('index', { title: 'Bot-E', errors: [`CAPTCHA verification failed: ${codes}`] });
+              res.render('index', { title: 'Bot-E', question: req.body.question, errors: [`CAPTCHA verification failed: ${codes}`] });
           }
 
       } catch (err) {
         // Handle error (e.g., API server might be down or there was a network error)
-        res.render('index', { title: 'Bot-E', errors: ['There was an error sending your question to bot-e - please re-send.'] });
+        res.render('index', { title: 'Bot-E', question: req.body.question, errors: ['There was an error sending your question to bot-e - please re-send.'] });
       }
     }
 });
