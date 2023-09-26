@@ -57,7 +57,7 @@ router.post('/',
 
       } catch (err) {
         // Handle error (e.g., API server might be down or there was a network error)
-        res.render('index', { title: 'Bot-E', errors: ['There was an error sending the question to the API.'] });
+        res.render('index', { title: 'Bot-E', errors: ['There was an error sending your question to bot-e - please re-send.'] });
       }
     }
 });

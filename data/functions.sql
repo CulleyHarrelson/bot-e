@@ -130,8 +130,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION insert_question_comment(
   in_question_id TEXT,
   in_session_id TEXT,
-  in_comment TEXT,
-  in_parent_comment_id INTEGER DEFAULT NULL
+  in_comment TEXT
 ) RETURNS question_comment AS $$
 DECLARE
   comment_count INTEGER;
@@ -149,9 +148,9 @@ BEGIN
     RAISE EXCEPTION 'Error: Too many comments in the last hour for this session. Please try again soon.';
   ELSE
     -- Insert the new comment and return the inserted row
-    INSERT INTO question_comment (question_id, parent_comment_id, session_id, comment)
-    VALUES (in_question_id, in_parent_comment_id, in_session_id, in_comment)
-    RETURNING * INTO new_comment;
+    INSERT INTO question_comment (question_id, session_id, comment)
+    VALUES (in_question_id, in_session_id, in_comment)
+    RETURNING * INTO new_coment;
     
     RETURN new_comment;
   END IF;

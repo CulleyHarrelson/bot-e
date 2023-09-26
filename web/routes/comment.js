@@ -31,16 +31,20 @@ router.post('/',
           if (verificationResponse.data.success) {
             if (verificationResponse.data.score > 0.5) {
               const apiResponse = await axios.post(`${apiServer}/add_comment`, { question_id: req.body.question_id,  session_id: req.body.session_id, comment: req.body.comment });
-              if (apiResponse.data[0] > 0) {
-                return res.json({ success: true });
+              //console.log("after api call");
+              if (apiResponse.request.res.statusCode == 200) {
+                return_value = { success: true };
+                return res.json(return_value);
               } else {
                 return res.json({ success: false, error: 'Comment addition failed.' });
               }
 
             } else {
+              //console.log('CAPTCHA verification failed because of score.');
               return res.json({ success: false, error: 'CAPTCHA verification failed because of score.' });
             }
           } else {
+              //console.log(verificationResponse.data);
               return res.json({ success: false, error: 'CAPTCHA verification failed.' });
           }
 

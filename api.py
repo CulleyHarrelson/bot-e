@@ -181,19 +181,21 @@ async def add_comment(request):
         if not bote.validate_key(question_id):
             return web.json_response({"error": "Invalid question_id."}, status=400)
 
-        conn = await db_connect2()  # Use db_connect2 to establish a database connection
+        conn = await bote.db_connect2()
 
         try:
             async with conn.transaction():
                 result_tuple = await conn.fetchval(
                     "select * from insert_question_comment ($1, $2, $3)",
-                    (question_id, session_id, comment),
+                    question_id,
+                    session_id,
+                    comment,
                 )
-
-            return web.json_response({"result": result_tuple})
+            return web.json_response({"success": True}, status=200)
         finally:
             await conn.close()
     except Exception as e:
+        bote.debug(e)
         error_message = str(e)
         return web.json_response({"error": error_message}, status=500)
 

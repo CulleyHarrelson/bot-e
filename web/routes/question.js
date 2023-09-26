@@ -18,7 +18,7 @@ router.get('/:question_id', async function(req, res, next) {
 
     // Make the second request to get comments data
     const commentsResponse = await axios.get(`${apiServer}/comments/${questionId}`);
-    const comments = commentsResponse.data; // Assuming the response contains comments data
+    const comments = commentsResponse.data; 
 
     // Process and format the data as needed
     const title = questionDetails.title ? questionDetails.title.replace(/"/g, '') : 'Question:';
