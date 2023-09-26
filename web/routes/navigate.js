@@ -7,8 +7,8 @@ var axios = require('axios');  // <-- Require axios
 /* POST home page. */
 router.post('/', 
   [
-    check('question_id', 'question_id is required').trim().isLength({ min: 1 }).escape(),
-    check('session_id', 'session_id is required').trim().isLength({ min: 1 }).escape(),
+    //check('question_id', 'question_id is required').trim().isLength({ min: 1 }).escape(),
+    //check('session_id', 'session_id is required').trim().isLength({ min: 1 }).escape(),
     check('direction', 'direction is required').trim().isLength({ min: 1 }).escape(),
     check('recaptcha_token', 'recaptcha_token is required').trim().isLength({ min: 1 }).escape()
 
@@ -16,7 +16,7 @@ router.post('/',
   async (req, res) => {  // <-- Make the callback async
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      //console.debug(errors)
+      console.debug(errors)
       // There are errors. Render the form again with sanitized values and error messages.
       res.json({ success: false });
     }
@@ -51,6 +51,7 @@ router.post('/',
         }
 
       } catch (err) {
+        console.log(err)
         // Handle error (e.g., API server might be down or there was a network error)
         res.json({ success: false });
       }

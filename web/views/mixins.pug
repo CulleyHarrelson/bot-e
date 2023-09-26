@@ -1,10 +1,18 @@
 mixin topBar
+  script.
+    function viewRandom(){
+      alert('random');
+      return false;
+    }
   .top-bar
     .top-bar-left
       ul.dropdown.menu(data-dropdown-menu)
         li.menu-text Bot-E
         li
           a(href='/') new question
+        li
+          form(id="random-form" method="post" action="/next_question")
+            button.button.unstyled.hollow(style="border: none;", type="button", name="direction" value="random", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='randomForm', data-tooltip, tabindex="2", title="browse") browse
     .top-bar-right
       ul.menu
           li
@@ -13,7 +21,35 @@ mixin topBar
             button#search-button.button(type='button') Search
 
           script.
+            function randomForm(token) {
+              console.log("in function")
+              const formData = new FormData();
+              formData.append('direction', 'random');
+              formData.append('recaptcha_token', token); 
+
+              fetch('/navigate', { 
+                method: 'POST',
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: {
+                  'Content-Type': 'application/json', // Set the content type to JSON
+                }
+              })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                    window.location.href = '/question/' + data['question_id'];
+                } else {
+                  // reCAPTCHA verification failed, display an error or take appropriate action
+                  console.log(data)
+                  console.error('reCAPTCHA verification failed');
+                }
+              })
+              .catch(error => {
+                console.debug('Error:', error);
+              });
+            }
             document.addEventListener('DOMContentLoaded', function() {
+              //TODO: captcha
               const searchInput = document.getElementById('search-input');
               const searchButton = document.getElementById('search-button');
 

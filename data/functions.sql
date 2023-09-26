@@ -150,7 +150,7 @@ BEGIN
     -- Insert the new comment and return the inserted row
     INSERT INTO question_comment (question_id, session_id, comment)
     VALUES (in_question_id, in_session_id, in_comment)
-    RETURNING * INTO new_coment;
+    RETURNING * INTO new_comment;
     
     RETURN new_comment;
   END IF;

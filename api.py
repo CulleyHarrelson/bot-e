@@ -80,18 +80,17 @@ async def next_question(request):
     methods
     """
     try:
-        data = await request.json()  # Extract JSON data from the request
+        data = await request.json()
         direction = data["direction"]
-        question_id = data["question_id"]
-        session_id = data["session_id"]
-        bote.debug(question_id)
-
         if direction == "random":
+            bote.debug("random")
             random_question = await bote.random_question()
             return web.json_response(
                 {"question_id": random_question.get("question_id")}
             )
         else:
+            question_id = data["question_id"]
+            session_id = data["session_id"]
             if not question_id:
                 return web.json_response(
                     {"error": "question_id is required."}, status=400
