@@ -4,18 +4,18 @@ mixin topBar
       alert('random');
       return false;
     }
-  .top-bar
+  .top-bar(style="background-color:#fff;")
     .top-bar-left
-      ul.dropdown.menu(data-dropdown-menu)
+      ul.dropdown.menu(data-dropdown-menu, style="background-color:#fff;")
         li
-          img(src="images/bot-e-logo-only.png", height="50", width="50")
+          img(src="images/bot-e-logo-only.png", height="40", width="40")
         li
           a.button.unstyled.hollow(style="border: none;", href='/') new question
         li
           form(id="random-form" method="post" action="/next_question")
             button.button.unstyled.hollow(style="border: none;", type="button", name="direction" value="random", class="g-recaptcha", data-sitekey="6Le7yP8nAAAAAPUOVGZ9Xfu95Nco8h0vmUhUZ0u3", data-callback='randomForm', data-tooltip, tabindex="2", title="browse") browse
     .top-bar-right
-      ul.menu
+      ul.menu(style="background-color:#fff;")
           li
             input#search-input(type='search', name='search_phrase', placeholder='Search', value=search_for)
           li
