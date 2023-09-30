@@ -3,10 +3,8 @@
 
 ## MVP TODO:
 
-- Finish Privacy Policy 
-- change image_url to use full domain
+- add share button to question page
 - Build Server
-    - logging
     - load testing
     - reboot
         - pm2
@@ -15,9 +13,6 @@
         - backups
 - Transfer domain
     - Oct 4
-- Add LLC stuff
-- Email Marketing
-    - capture email addresses?
 - review ai image/video tools:
     - https://cloudinary.com/products/programmable_media
     - https://imagekit.io/
@@ -25,9 +20,9 @@
     - https://elevenlabs.io/
 
 Backlog:
-    - Flutter App
-    - Varnish
     - Websockets streaming response
+    - Flutter App.  POSTPONE
+    - Varnish
     - Create Social Media Presence
         - Instagram
         - LinkedIn
