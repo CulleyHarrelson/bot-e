@@ -134,7 +134,6 @@ async def post_question(request):
 
 async def respond(request):
     try:
-        bote.debug("begin respond api call")
         data = await request.json()
         if "question_id" not in data or not data["question_id"]:
             return web.json_response({"error": "question_id is required."}, status=400)
@@ -142,23 +141,30 @@ async def respond(request):
         question_id = data["question_id"]
 
         if "enrich" in data:
-            bote.debug(f"obtaining enrich lock: {question_id}")
-            lock = bote.row_lock(f"E-{question_id}")
+            bote.debug(f"respond - obtaining enrich lock: {question_id}")
+            lock = await bote.row_lock(f"E-{question_id}")
+
+            bote.debug(lock)
             if lock:
-                bote.debug(f"responding enrich api call: {question_id}")
+                bote.debug(f"LOCKED enriching question call: {question_id}")
                 result = await bote.enrich_question(question_id)
                 return web.json_response(result)
             else:
-                bote.debug(f"enrich api call locked: {question_id}")
+                bote.debug(
+                    f"FAILED TO ENRICH QUESTION: enrich api call locked: {question_id}"
+                )
         else:
-            bote.debug(f"obtaining question lock: {question_id}")
-            lock = bote.row_lock(f"A-{question_id}")
+            bote.debug(f"respond - obtaining question lock: {question_id}")
+            lock = await bote.row_lock(f"A-{question_id}")
+            bote.debug(lock)
             if lock:
-                bote.debug(f"respond api call: {question_id}")
+                bote.debug(f"LOCKED - respond to question: {question_id}")
                 result = await bote.respond(question_id)
                 return web.json_response(result)
             else:
-                bote.debug(f"respond api call locked: {question_id}")
+                bote.debug(
+                    f"FAILED TO RESPOND TO QUESTION: respond api call locked: {question_id}"
+                )
 
     except Exception as e:
         return web.json_response({"error": str(e)}), 500

@@ -204,21 +204,21 @@ async def trending(start_date):
         await db_release(conn)
 
 
-async def row_lock(row_key):
+async def row_lock(lock_key):
     try:
         conn = await db_connect2()
 
         query = """
-            SELECT row_lock($1)
+            SELECT lock_row($1)
             """
 
         async with conn.transaction():
-            lock = await conn.fetchrow(query, row_key)
+            lock = await conn.fetchrow(query, lock_key)
 
-        if not lock:
+        lo = lock["lock_row"]
+        if not lock["lock_row"]:
             return False
 
-        data = dict(question)
         return True
     finally:
         await db_release(conn)
@@ -361,7 +361,7 @@ def embedding_api(input_text):
 
 
 async def respond(question_id):
-    logger.debug(f"beginning response: {question_id}")
+    logger.debug(f"beginning respond function: {question_id}")
     if not validate_key(question_id):
         return {"error": "invalid question_id"}
     question = await simplified_question(question_id)
@@ -371,7 +371,7 @@ async def respond(question_id):
     try:
         conn = await db_connect2()
         question = await respond_to_question(conn, question)
-        logger.debug(f"response recieved: {question_id}")
+        logger.debug(f"response function, response recieved: {question_id}")
         return question
     finally:
         await db_release(conn)
@@ -384,7 +384,7 @@ async def respond_to_question(conn, data):
 
     question_id = data["question_id"]
 
-    logger.debug(f"beginning response to question {question_id}")
+    logger.debug(f"beginning response_to_question {question_id}")
 
     system_message = f"{system_prompt}"
 
@@ -579,4 +579,4 @@ def stability_image(title, question_id):
 
 
 if __name__ == "__main__":
-    asyncio.run(respond())
+    asyncio.run(row_lock("corn"))
