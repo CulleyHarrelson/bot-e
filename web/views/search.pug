@@ -11,33 +11,6 @@ block content
       div.cell.auto
         button#search-button.button(type='button') Search
         script.
-          function randomForm(token) {
-            console.log("in function")
-            const formData = new FormData();
-            formData.append('direction', 'random');
-            formData.append('recaptcha_token', token); 
-
-            fetch('/navigate', { 
-              method: 'POST',
-              body: JSON.stringify(Object.fromEntries(formData)),
-              headers: {
-                'Content-Type': 'application/json', // Set the content type to JSON
-              }
-            })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                  window.location.href = '/question/' + data['question_id'];
-              } else {
-                // reCAPTCHA verification failed, display an error or take appropriate action
-                console.log(data)
-                console.error('reCAPTCHA verification failed');
-              }
-            })
-            .catch(error => {
-              console.debug('Error:', error);
-            });
-          }
           document.addEventListener('DOMContentLoaded', function() {
             //TODO: captcha
             const searchInput = document.getElementById('search-input');
