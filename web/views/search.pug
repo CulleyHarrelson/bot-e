@@ -5,19 +5,75 @@ block content
   +topBar
   .grid-container
     .grid-x.grid-margin-x
-      h1 Search Results
+      div.cell.small-4
+      div.cell.auto
+        input#search-input(type='search', name='search_phrase', placeholder='Search', value=search_for)
+      div.cell.auto
+        button#search-button.button(type='button') Search
+        script.
+          function randomForm(token) {
+            console.log("in function")
+            const formData = new FormData();
+            formData.append('direction', 'random');
+            formData.append('recaptcha_token', token); 
 
-  .grid-container
-    each question in questions
-      .question-container
-        a(href=question.canonical)
-          h4= question.title
-          p
+            fetch('/navigate', { 
+              method: 'POST',
+              body: JSON.stringify(Object.fromEntries(formData)),
+              headers: {
+                'Content-Type': 'application/json', // Set the content type to JSON
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                  window.location.href = '/question/' + data['question_id'];
+              } else {
+                // reCAPTCHA verification failed, display an error or take appropriate action
+                console.log(data)
+                console.error('reCAPTCHA verification failed');
+              }
+            })
+            .catch(error => {
+              console.debug('Error:', error);
+            });
+          }
+          document.addEventListener('DOMContentLoaded', function() {
+            //TODO: captcha
+            const searchInput = document.getElementById('search-input');
+            const searchButton = document.getElementById('search-button');
 
-        .flex-container
-          if question.image_url
-            .image-container
-              img(src=question.image_url, alt='Image', height='64px', width='64px', style='margin-right:10px;')
-          .description-container
-            p Description: #{question.description}
+            searchButton.addEventListener('click', performSearch);
+            
+            searchInput.addEventListener('keypress', function(event) {
+              if (event.key === 'Enter') {
+                performSearch();
+              }
+            });
+
+            function performSearch() {
+              const searchPhrase = searchInput.value;
+              if (searchPhrase) {
+                window.location.href = '/search/' + encodeURIComponent(searchPhrase);
+              }
+            }
+          });
+      div.cell.small-4
+  if questions.length > 0
+    .grid-container
+      .grid-x.grid-margin-x
+        h1 Search Results
+    .grid-container
+      each question in questions
+        .question-container
+          a(href=question.canonical)
+            h4= question.title
+            p
+
+          .flex-container
+            if question.image_url
+              .image-container
+                img(src=question.image_url, alt='Image', height='64px', width='64px', style='margin-right:10px;')
+            .description-container
+              p Description: #{question.description}
   +siteFooter

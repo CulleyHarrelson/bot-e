@@ -2,9 +2,13 @@ var express = require('express');
 var router = express.Router();
 const axios = require('axios');
 
-router.get('/:search_for', async function(req, res, next) {
+router.get('/:search_for?', async function(req, res, next) {
   try {
-    const search_for = req.params.search_for;
+    const search_for = req.params.search_for || '';
+    if (!search_for) {
+      res.render('search', { questions: [], search_for: '' });
+      return;
+    }
     const apiServer = req.app.locals.apiServer;
 
     const response = await axios.get(`${apiServer}/search/${search_for}`);
