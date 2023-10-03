@@ -185,7 +185,7 @@ block content
           .card-divider
             | Question
           .card-section
-            .row(id="callout")
+            .row
             p !{question}
       else
         .card
@@ -199,10 +199,15 @@ block content
           .card-section
             p !{question}
         .card(id="answer")
-          .card-divider
+          .card-divider 
             | Answer
+          div.grid-x(id="callout")
+            div.cell.text-right
+              a.button.unstyled.hollow.clear(href='javascript:showCallout("thank you for voting", "primary");')
+                i.h4.fi-like
+              a.button.unstyled.hollow.clear(href='javascript:showCallout("thank you for voting", "primary");')
+                i.h4.fi-dislike
           .card-section
-            h4 bot-e
             p !{answer}
         +navButtons
         .card
@@ -264,7 +269,7 @@ block content
                             newParagraph.innerHTML = '<i>' + formatDate() + ' - ' + comment + '</i>';
                             const existingContent = commentRow.innerHTML;
                             commentRow.innerHTML = newParagraph.outerHTML + existingContent;
-                            showCallout('comment added', 'success')
+                            commentInput.value = '';
                           } else {
                             showCallout(data.error, 'error')
                           }

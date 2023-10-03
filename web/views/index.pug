@@ -26,7 +26,7 @@ block content
       form.cell.small-12.large-6(method="POST", action="/")
         textarea(name="question", required, style="height: 200px; width: 100%;") #{question}
         div#recaptcha
-        button.button.large.success(type="submit") Get Advice
+        button.button.large.success(type="submit") Get Response
   if errors
     script.
       const notice = document.createElement('div');
