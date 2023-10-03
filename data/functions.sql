@@ -4,6 +4,7 @@ RETURNS SETOF question
 AS $$
 DECLARE
     target_embedding vector(1536);
+    vote_count INT;
 BEGIN
     SELECT embedding INTO target_embedding
     FROM question
@@ -13,14 +14,24 @@ BEGIN
         RAISE EXCEPTION 'No record found for the given question_id';
     END IF;
 
-    INSERT INTO question_vote (question_id, session_id, up_vote) values (question_id_in, session_id_in, similar_in);
+    -- Check if the combination already exists in question_vote
+    SELECT COUNT(*) INTO vote_count
+    FROM question_vote
+    WHERE question_id = question_id_in
+      AND session_id = session_id_in
+      AND up_vote = similar_in;
+
+    IF vote_count = 0 THEN
+        -- Insert the combination if it doesn't exist
+        INSERT INTO question_vote (question_id, session_id, up_vote) VALUES (question_id_in, session_id_in, similar_in);
+    END IF;
 
     RETURN QUERY
     SELECT a.*
     FROM question a
     WHERE a.question_id <> question_id_in 
       -- this is a problematic where clauses when there is very little data
-      AND a.question_id NOT IN (SELECT question_id FROM question_vote where session_id = session_id_in)
+      AND a.question_id NOT IN (SELECT question_id FROM question_vote WHERE session_id = session_id_in)
     ORDER BY 
       CASE WHEN similar_in THEN a.embedding <-> target_embedding ELSE target_embedding <-> a.embedding END, 
       a.question_id 

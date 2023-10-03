@@ -469,8 +469,8 @@ async def enrich_question(question_id):
     logger.debug("begin function call to openAI")
     function_message = await asyncio.to_thread(
         openai.ChatCompletion.create,
-        # model="gpt-3.5-turbo",
-        model="gpt-4",
+        model="gpt-3.5-turbo",
+        # model="gpt-4",
         messages=messages,
         functions=functions,
         function_call={"name": "extract_data"},

@@ -21,7 +21,7 @@ router.get('/:question_id', async function(req, res, next) {
     const comments = commentsResponse.data; 
 
     // Process and format the data as needed
-    const title = questionDetails.title ? questionDetails.title.replace(/"/g, '') : 'Question:';
+    const title = questionDetails.title ? questionDetails.title.replace(/"/g, '') : '(response in process)';
     const description = questionDetails.description;
     const image_url = questionDetails.image_url;
     const media = questionDetails.media;
