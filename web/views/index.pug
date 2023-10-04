@@ -22,11 +22,11 @@ block content
     .grid-x.grid-margin-x.align-center 
       div.cell.small-12
         h1 Bot-E
-        p Public Chat
+        p What's going on?
       form.cell.small-12.large-6(method="POST", action="/")
         textarea(name="question", required, style="height: 200px; width: 100%;") #{question}
         div#recaptcha
-        button.button.large.success(type="submit") Post Response
+        button.button.large.success(type="submit") Get Bot-E Answer
   if errors
     script.
       const notice = document.createElement('div');

@@ -573,6 +573,7 @@ def stability_image(title, question_id):
                 image_filename = os.path.join(question_subfolder, f"{question_id}.png")
 
                 img.save(image_filename)
+                os.chmod(image_filename, 0o664)
                 return f"/images/questions/{folder_character}/{question_id}.png"
 
     return ""
