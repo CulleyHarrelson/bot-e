@@ -1,34 +1,8 @@
-# Human Advice is Overrated
+# Bot-E 
+
+source code for bot-e.com
 
 
-## MVP TODO:
-
-- add share button to question page
-- Build Server
-    - load testing
-    - reboot
-        - pm2
-        - supervisord
-    - Postgresql 
-        - backups
-- Transfer domain
-    - Oct 4
-- review ai image/video tools:
-    - https://cloudinary.com/products/programmable_media
-    - https://imagekit.io/
-    - https://imgix.com/
-    - https://elevenlabs.io/
-
-Backlog:
-    - Websockets streaming response
-    - Flutter App.  POSTPONE
-    - Varnish
-    - Create Social Media Presence
-        - Instagram
-        - LinkedIn
-        - TikTok
-        - Facebook
-    - Email Marketing
 
 Advice Request Message Flow:
 
